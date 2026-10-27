@@ -2,6 +2,10 @@
 
 Dalamud dev plugin that raises (or lowers) the overhead nameplate of a game object.
 
+> **Install status:** there is no plugin-repo (DIP17) entry and no release zip yet. It loads as a
+> Dalamud **dev plugin** built from source — see *Build* / *Install* below. Requires .NET SDK 10 and
+> Dalamud's dev distrib at `%APPDATA%\XIVLauncher\addon\Hooks\dev`.
+
 ## Why it exists
 
 FFXIV has no vanilla control for nameplate height. The plate is anchored in world space at the
