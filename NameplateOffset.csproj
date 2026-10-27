@@ -1,0 +1,19 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+
+    <!-- Manifest fields, rendered into NameplateOffset.json by DalamudPackager -->
+    <Author>DalamudTranslator</Author>
+    <Name>Nameplate Offset</Name>
+    <Punchline>Raise or lower the nameplate above a character's head.</Punchline>
+    <Description>Moves the in-world nameplate vertically by writing the game object's NameplateOffsetTarget field.
+Slider in yalms (1 yalm = 1 metre). Your own character, other players and NPCs/objects can be offset independently.</Description>
+    <RepoUrl></RepoUrl>
+    <Tags>nameplate;UI;tweak</Tags>
+
+    <AssemblyName>NameplateOffset</AssemblyName>
+    <RootNamespace>NameplateOffset</RootNamespace>
+  </PropertyGroup>
+
+</Project>
