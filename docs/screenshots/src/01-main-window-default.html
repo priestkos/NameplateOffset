@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>01 — Nameplate Offset default window</title>
+  <link rel="stylesheet" href="dalamud-imgui.css" />
+</head>
+<body class="crop-window">
+  <div class="imgui-window" id="capture">
+    <div class="imgui-titlebar">
+      <span>Nameplate Offset</span>
+      <span class="close" aria-hidden="true"></span>
+    </div>
+    <div class="imgui-body">
+      <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+      <div class="imgui-spacing"></div>
+      <div class="slider-row">
+        <label>Height (yalms)</label>
+        <div class="slider-track">
+          <div class="slider-fill" style="width: 37%"></div>
+          <div class="slider-thumb" style="left: 37%"></div>
+        </div>
+        <span class="slider-value">+0.35</span>
+      </div>
+      <div class="imgui-spacing"></div>
+      <div class="label-disabled">Apply to:</div>
+      <div class="checkbox-row">
+        <span class="checkbox-box checked">✓</span>
+        <span>My character</span>
+      </div>
+      <div class="checkbox-row">
+        <span class="checkbox-box"></span>
+        <span>Other players</span>
+      </div>
+      <div class="checkbox-row">
+        <span class="checkbox-box"></span>
+        <span>NPCs / minions / objects</span>
+      </div>
+      <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+    </div>
+  </div>
+</body>
+</html>

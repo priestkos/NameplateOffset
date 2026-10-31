@@ -1,0 +1,271 @@
+/* Stylised Dalamud / ImGui dark theme for mock-ups (not game assets). */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  color: #e8e8e8;
+  background: #0d0d0f;
+  min-height: 100vh;
+}
+
+.scene {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3a5a7a 0%, #2a4a3a 45%, #1a3028 100%);
+}
+
+.scene-floor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
+}
+
+.scene-prop {
+  position: absolute;
+  bottom: 120px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6a7a8a, #4a5565);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.imgui-window {
+  position: absolute;
+  background: rgba(15, 15, 18, 0.94);
+  border: 1px solid #3a3a44;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  min-width: 340px;
+}
+
+.imgui-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #2a2a32, #1e1e26);
+  border-bottom: 1px solid #3a3a44;
+  font-weight: 600;
+  font-size: 13px;
+  color: #f0f0f0;
+}
+
+.imgui-titlebar .close {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #c44;
+  opacity: 0.85;
+}
+
+.imgui-body {
+  padding: 12px 14px 14px;
+  line-height: 1.45;
+}
+
+.imgui-body p.help {
+  color: #c8c8c8;
+  margin-bottom: 10px;
+}
+
+.imgui-spacing {
+  height: 8px;
+}
+
+.label-disabled {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.slider-row label {
+  flex: 0 0 110px;
+  color: #ddd;
+}
+
+.slider-track {
+  flex: 1;
+  height: 4px;
+  background: #2a2a34;
+  border-radius: 2px;
+  position: relative;
+}
+
+.slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: #4a9fd8;
+  border-radius: 2px;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  margin-left: -6px;
+  background: #6bb8e8;
+  border: 1px solid #2a6a9a;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.slider-value {
+  flex: 0 0 48px;
+  text-align: right;
+  color: #9fd4ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  color: #ddd;
+}
+
+.checkbox-box {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #555;
+  border-radius: 2px;
+  background: #1a1a22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+}
+
+.checkbox-box.checked {
+  background: #3a7ab8;
+  border-color: #5a9fd8;
+}
+
+.footer-hint {
+  color: #777;
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+/* Nameplate mock */
+.nameplate {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.nameplate-bar {
+  height: 3px;
+  width: 100%;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
+.nameplate-name {
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+.nameplate-title {
+  font-size: 11px;
+  color: #e0e0e0;
+  text-shadow: 0 1px 2px #000;
+}
+
+.character-silhouette {
+  position: absolute;
+  transform: translateX(-50%);
+  bottom: 100px;
+  width: 48px;
+  height: 72px;
+  background: linear-gradient(180deg, #8898a8 0%, #556575 100%);
+  border-radius: 12px 12px 4px 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.character-silhouette.npc {
+  width: 40px;
+  height: 58px;
+  background: linear-gradient(180deg, #a89070, #6a5848);
+}
+
+.character-silhouette.minion {
+  width: 28px;
+  height: 36px;
+  background: linear-gradient(180deg, #90a860, #607838);
+}
+
+/* Chat mock (Dalamud-style log) */
+.chat-panel {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: 520px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.chat-line {
+  color: #ccc;
+  margin: 2px 0;
+}
+
+.chat-line.cmd {
+  color: #8fd4ff;
+}
+
+.chat-line.sys {
+  color: #aaa;
+  font-style: italic;
+}
+
+.chat-input {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(20, 20, 28, 0.9);
+  border: 1px solid #444;
+  border-radius: 3px;
+  color: #fff;
+  font-family: inherit;
+}
+
+/* Crop layout: window only */
+body.crop-window {
+  background: #121218;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+body.crop-window .imgui-window {
+  position: relative;
+}

@@ -5,6 +5,37 @@ clear of a mount, a hat or another plate. Scope is per object type.
 
 `/npoffset` · Dalamud API 15 · .NET 10
 
+## Screenshots
+
+Screenshots are mock-ups illustrating the UI, not captures from the live game.
+
+| | |
+| --- | --- |
+| ![Default configuration window](docs/screenshots/01-main-window-default.png) | **Default window** — intro text, **Height (yalms)** at the default +0.35, **Apply to** defaults (My character on), and the in-window command hint. |
+| ![Height and scope options](docs/screenshots/02-height-and-scopes.png) | **Height slider and Apply to** — raised offset (+1.20 yalms) with all three scope checkboxes enabled. |
+| ![Reset to zero yalms](docs/screenshots/03-reset-offset-zero.png) | **Reset offset** — **Height (yalms)** at +0.00 (same outcome as `/npoffset 0`). |
+| ![Nameplate raised above character](docs/screenshots/04-nameplate-visual-effect.png) | **Vertical offset effect** — stylised scene showing a nameplate raised by the configured offset (My character scope). |
+| ![Slash commands](docs/screenshots/05-slash-commands.png) | **`/npoffset` commands** — toggle window, set yalms (`/npoffset 0.35`), and reset (`/npoffset 0`), with the plugin’s registered help text. |
+
+### Feature coverage
+
+| User-facing feature | Shown in |
+| --- | --- |
+| Configuration window title **Nameplate Offset** | 01–05 |
+| Help text: *Raises the plate above your head. 1 yalm = 1 in-game metre.* | 01–03 |
+| **Height (yalms)** slider (−1.5 … +3.0, default 0.35, `%+.2f` display) | 01–04 |
+| **Apply to:** **My character** (default on) | 01–04 |
+| **Apply to:** **Other players** (default off) | 01–02 |
+| **Apply to:** **NPCs / minions / objects** (default off) | 01–02 |
+| In-window hint: `/npoffset <yalms> \| /npoffset 0 to reset` | 01–03 |
+| `/npoffset` — toggle window | 05 |
+| `/npoffset <yalms>` — set offset (clamped −1.5 … 3.0) | 05 |
+| `/npoffset 0` — reset offset | 03, 05 |
+| Open via Dalamud **Open Config** / plugin settings (`OpenConfigUi`) | 01 (same window) |
+| Nameplate moves up/down in world (visual result) | 04 |
+
+Mock-up sources live under `docs/screenshots/src/`; regenerate PNGs with `node docs/screenshots/src/render.mjs` (requires `npm install playwright` in that folder once).
+
 ## What it does
 
 - **Offsets the plate vertically** — in yalms (1 yalm = 1 m), slider −1.5 to +3.0, default 0.35.
