@@ -34,8 +34,6 @@ Screenshots are mock-ups illustrating the UI, not captures from the live game.
 | Open via Dalamud **Open Config** / plugin settings (`OpenConfigUi`) | 01 (same window) |
 | Nameplate moves up/down in world (visual result) | 04 |
 
-Mock-up sources live under `docs/screenshots/src/`; regenerate PNGs with `node docs/screenshots/src/render.mjs` (requires `npm install playwright` in that folder once).
-
 ### Mock-up video
 
 The clip below is a **UI mock-up walkthrough** (same stylised scenes as the screenshots), **not** footage from the live game.
@@ -43,8 +41,6 @@ The clip below is a **UI mock-up walkthrough** (same stylised scenes as the scre
 ![Mock-up walkthrough preview](docs/videos/mockup-walkthrough.gif)
 
 [Download mockup-walkthrough.mp4](docs/videos/mockup-walkthrough.mp4) (H.264, 1280×720)
-
-Regenerate with `npm install` and `node docs/videos/src/render.mjs` in `docs/videos/src/` (Playwright + ffmpeg).
 
 ## What it does
 
