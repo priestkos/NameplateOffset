@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>04 — Nameplate vertical offset (visual)</title>
+  <link rel="stylesheet" href="dalamud-imgui.css" />
+  <style>
+    .compare-label {
+      position: absolute;
+      top: 20px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      text-shadow: 0 1px 3px #000;
+    }
+    .arrow {
+      position: absolute;
+      width: 2px;
+      background: rgba(120, 200, 255, 0.8);
+    }
+    .arrow::after {
+      content: "▲";
+      position: absolute;
+      top: -14px;
+      left: -5px;
+      color: rgba(120, 200, 255, 0.9);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" id="capture">
+    <div class="scene-floor"></div>
+    <div class="scene-prop" style="left: 200px; width: 80px; height: 120px;"></div>
+    <div class="scene-prop" style="right: 180px; width: 100px; height: 90px;"></div>
+
+    <span class="compare-label" style="left: 280px;">Default plate height</span>
+    <span class="compare-label" style="left: 720px;">+0.35 yalms (default offset)</span>
+
+    <!-- Left: baseline -->
+    <div class="character-silhouette" style="left: 320px;"></div>
+    <div class="nameplate" style="left: 320px; bottom: 188px;">
+      <div class="nameplate-bar" style="background: #48a868;"></div>
+      <div class="nameplate-name">Example Character</div>
+      <div class="nameplate-title">&lt;Placeholder&gt;</div>
+    </div>
+
+    <!-- Right: raised -->
+    <div class="character-silhouette" style="left: 760px;"></div>
+    <div class="nameplate" style="left: 760px; bottom: 218px;">
+      <div class="nameplate-bar" style="background: #48a868;"></div>
+      <div class="nameplate-name">Example Character</div>
+      <div class="nameplate-title">&lt;Placeholder&gt;</div>
+    </div>
+    <div class="arrow" style="left: 820px; bottom: 198px; height: 18px;"></div>
+
+    <div class="imgui-window" style="top: 24px; right: 24px;">
+      <div class="imgui-titlebar">
+        <span>Nameplate Offset</span>
+        <span class="close"></span>
+      </div>
+      <div class="imgui-body">
+        <div class="slider-row">
+          <label>Height (yalms)</label>
+          <div class="slider-track">
+            <div class="slider-fill" style="width: 37%"></div>
+            <div class="slider-thumb" style="left: 37%"></div>
+          </div>
+          <span class="slider-value">+0.35</span>
+        </div>
+        <div class="label-disabled" style="margin-top:8px;">Apply to:</div>
+        <div class="checkbox-row">
+          <span class="checkbox-box checked">✓</span>
+          <span>My character</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

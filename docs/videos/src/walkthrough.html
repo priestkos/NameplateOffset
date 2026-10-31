@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Nameplate Offset — mock-up walkthrough</title>
+  <link rel="stylesheet" href="../../screenshots/src/dalamud-imgui.css" />
+  <link rel="stylesheet" href="walkthrough.css" />
+</head>
+<body>
+  <div id="stage">
+    <!-- Disclaimer (opacity driven by frame) -->
+    <div class="disclaimer" id="disclaimer">
+      <div class="disclaimer-inner">
+        <h1>UI mock-up walkthrough</h1>
+        <p>Illustrations only — not a capture from the live FFXIV client.</p>
+      </div>
+    </div>
+
+    <!-- Scene A: default window -->
+    <div class="layer config-only" id="scene-default">
+      <div class="imgui-window">
+        <div class="imgui-titlebar">
+          <span>Nameplate Offset</span>
+          <span class="close" aria-hidden="true"></span>
+        </div>
+        <div class="imgui-body">
+          <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+          <div class="imgui-spacing"></div>
+          <div class="slider-row">
+            <label>Height (yalms)</label>
+            <div class="slider-track">
+              <div class="slider-fill" id="sd-fill"></div>
+              <div class="slider-thumb" id="sd-thumb"></div>
+            </div>
+            <span class="slider-value" id="sd-value">+0.35</span>
+          </div>
+          <div class="imgui-spacing"></div>
+          <div class="label-disabled">Apply to:</div>
+          <div class="checkbox-row">
+            <span class="checkbox-box checked" id="sd-c0">✓</span>
+            <span>My character</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box" id="sd-c1"></span>
+            <span>Other players</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box" id="sd-c2"></span>
+            <span>NPCs / minions / objects</span>
+          </div>
+          <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene B: height + scopes (animated from scene A state) -->
+    <div class="layer config-only" id="scene-scopes">
+      <div class="imgui-window">
+        <div class="imgui-titlebar">
+          <span>Nameplate Offset</span>
+          <span class="close" aria-hidden="true"></span>
+        </div>
+        <div class="imgui-body">
+          <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+          <div class="imgui-spacing"></div>
+          <div class="slider-row">
+            <label>Height (yalms)</label>
+            <div class="slider-track">
+              <div class="slider-fill" id="sc-fill"></div>
+              <div class="slider-thumb" id="sc-thumb"></div>
+            </div>
+            <span class="slider-value" id="sc-value">+0.35</span>
+          </div>
+          <div class="imgui-spacing"></div>
+          <div class="label-disabled">Apply to:</div>
+          <div class="checkbox-row">
+            <span class="checkbox-box checked">✓</span>
+            <span>My character</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box" id="sc-c1"></span>
+            <span>Other players</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box" id="sc-c2"></span>
+            <span>NPCs / minions / objects</span>
+          </div>
+          <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene C: reset -->
+    <div class="layer config-only" id="scene-reset">
+      <div class="imgui-window">
+        <div class="imgui-titlebar">
+          <span>Nameplate Offset</span>
+          <span class="close" aria-hidden="true"></span>
+        </div>
+        <div class="imgui-body">
+          <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+          <div class="imgui-spacing"></div>
+          <div class="slider-row">
+            <label>Height (yalms)</label>
+            <div class="slider-track">
+              <div class="slider-fill" id="rs-fill"></div>
+              <div class="slider-thumb" id="rs-thumb"></div>
+            </div>
+            <span class="slider-value" id="rs-value">+1.20</span>
+          </div>
+          <div class="imgui-spacing"></div>
+          <div class="label-disabled">Apply to:</div>
+          <div class="checkbox-row">
+            <span class="checkbox-box checked">✓</span>
+            <span>My character</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box checked">✓</span>
+            <span>Other players</span>
+          </div>
+          <div class="checkbox-row">
+            <span class="checkbox-box checked">✓</span>
+            <span>NPCs / minions / objects</span>
+          </div>
+          <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene D: visual effect -->
+    <div class="layer" id="scene-visual">
+      <div class="scene">
+        <div class="scene-floor"></div>
+        <div class="scene-prop" style="left: 200px; width: 80px; height: 120px;"></div>
+        <div class="scene-prop" style="right: 180px; width: 100px; height: 90px;"></div>
+        <span class="compare-label" style="left: 280px;">Default plate height</span>
+        <span class="compare-label" style="left: 720px;">Raised by configured offset</span>
+        <div class="character-silhouette" style="left: 320px;"></div>
+        <div class="nameplate" id="np-left" style="left: 320px; bottom: 188px;">
+          <div class="nameplate-bar" style="background: #48a868;"></div>
+          <div class="nameplate-name">Example Character</div>
+          <div class="nameplate-title">&lt;Placeholder&gt;</div>
+        </div>
+        <div class="character-silhouette" style="left: 760px;"></div>
+        <div class="nameplate" id="np-right" style="left: 760px; bottom: 188px;">
+          <div class="nameplate-bar" style="background: #48a868;"></div>
+          <div class="nameplate-name">Example Character</div>
+          <div class="nameplate-title">&lt;Placeholder&gt;</div>
+        </div>
+        <div class="offset-arrow" id="np-arrow" style="left: 820px; bottom: 198px; height: 0;"></div>
+        <div class="imgui-window" style="top: 24px; right: 24px;">
+          <div class="imgui-titlebar">
+            <span>Nameplate Offset</span>
+            <span class="close"></span>
+          </div>
+          <div class="imgui-body">
+            <div class="slider-row">
+              <label>Height (yalms)</label>
+              <div class="slider-track">
+                <div class="slider-fill" id="vis-fill" style="width: 37%"></div>
+                <div class="slider-thumb" id="vis-thumb" style="left: 37%"></div>
+              </div>
+              <span class="slider-value" id="vis-value">+0.35</span>
+            </div>
+            <div class="label-disabled" style="margin-top:8px;">Apply to:</div>
+            <div class="checkbox-row">
+              <span class="checkbox-box checked">✓</span>
+              <span>My character</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene E: slash commands -->
+    <div class="layer" id="scene-cmds">
+      <div class="scene">
+        <div class="scene-floor"></div>
+        <div class="character-silhouette" style="left: 640px;"></div>
+        <div class="nameplate" style="left: 640px; bottom: 218px;">
+          <div class="nameplate-bar" style="background: #48a868;"></div>
+          <div class="nameplate-name">Example Character</div>
+        </div>
+        <div class="cmd-help">
+          <strong>/npoffset</strong> — Open the nameplate height window, or: /npoffset &lt;yalms&gt;  e.g. /npoffset 0.35
+        </div>
+        <div class="imgui-window" style="top: 24px; right: 24px; opacity: 0;" id="cmd-window">
+          <div class="imgui-titlebar">
+            <span>Nameplate Offset</span>
+            <span class="close"></span>
+          </div>
+          <div class="imgui-body">
+            <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+            <div class="slider-row">
+              <label>Height (yalms)</label>
+              <div class="slider-track">
+                <div class="slider-fill" style="width: 37%"></div>
+                <div class="slider-thumb" style="left: 37%"></div>
+              </div>
+              <span class="slider-value">+0.35</span>
+            </div>
+            <div class="label-disabled" style="margin-top:8px;">Apply to:</div>
+            <div class="checkbox-row">
+              <span class="checkbox-box checked">✓</span>
+              <span>My character</span>
+            </div>
+            <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+          </div>
+        </div>
+        <div class="chat-panel">
+          <div class="chat-line cmd hidden" id="chat-0">/npoffset</div>
+          <div class="chat-line cmd hidden" id="chat-1">/npoffset 0.35</div>
+          <div class="chat-line cmd hidden" id="chat-2">/npoffset 0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caption-bar" id="caption">
+      <span id="caption-title">UI mock-up — not an in-game capture</span>
+      <span class="sub" id="caption-sub">Nameplate Offset plugin</span>
+    </div>
+  </div>
+
+  <script>
+    /** Deterministic timeline: frame index → visuals (30 fps, 45 s). */
+    const FPS = 30;
+    const TOTAL_FRAMES = 45 * FPS;
+
+    const RANGES = {
+      disclaimer: [0, 90],
+      default: [90, 270],
+      scopes: [270, 450],
+      reset: [450, 600],
+      visual: [600, 840],
+      cmds: [840, TOTAL_FRAMES],
+    };
+
+    function clamp(v, lo, hi) {
+      return Math.min(hi, Math.max(lo, v));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function ease(t) {
+      return t * t * (3 - 2 * t);
+    }
+
+    function segmentProgress(frame, start, end) {
+      if (frame < start) return 0;
+      if (frame >= end) return 1;
+      return (frame - start) / (end - start);
+    }
+
+    /** Map yalms (−1.5…+3.0) to slider percent (matches static mock-ups). */
+    function yalmsToPct(y) {
+      return clamp(((y + 1.5) / 4.5) * 100, 0, 100);
+    }
+
+    function setSlider(fillEl, thumbEl, valueEl, yalms) {
+      const pct = yalmsToPct(yalms);
+      fillEl.style.width = `${pct}%`;
+      thumbEl.style.left = `${pct}%`;
+      const sign = yalms >= 0 ? "+" : "";
+      valueEl.textContent = `${sign}${yalms.toFixed(2)}`;
+    }
+
+    function setChecked(el, on) {
+      if (on) {
+        el.classList.add("checked");
+        el.textContent = "✓";
+      } else {
+        el.classList.remove("checked");
+        el.textContent = "";
+      }
+    }
+
+    function showLayer(id) {
+      for (const el of document.querySelectorAll(".layer")) {
+        el.classList.toggle("active", el.id === id);
+      }
+    }
+
+    function setCaption(title, sub) {
+      document.getElementById("caption-title").textContent = title;
+      document.getElementById("caption-sub").textContent = sub;
+    }
+
+    function renderFrame(frame) {
+      const disclaimer = document.getElementById("disclaimer");
+      const dProg = segmentProgress(frame, RANGES.disclaimer[0], RANGES.disclaimer[1]);
+      let dOpacity = 1;
+      if (dProg < 0.15) dOpacity = ease(dProg / 0.15);
+      else if (dProg > 0.75) dOpacity = 1 - ease((dProg - 0.75) / 0.25);
+      disclaimer.style.opacity = String(dOpacity);
+      disclaimer.style.display = dOpacity <= 0.01 ? "none" : "flex";
+
+      if (frame < RANGES.default[1]) {
+        showLayer("scene-default");
+        setCaption("Default configuration window", "Intro, Height (yalms) +0.35, Apply to defaults");
+        setSlider(
+          document.getElementById("sd-fill"),
+          document.getElementById("sd-thumb"),
+          document.getElementById("sd-value"),
+          0.35
+        );
+      } else if (frame < RANGES.scopes[1]) {
+        showLayer("scene-scopes");
+        const t = ease(segmentProgress(frame, RANGES.scopes[0] + 15, RANGES.scopes[1] - 30));
+        const y = lerp(0.35, 1.2, t);
+        setSlider(
+          document.getElementById("sc-fill"),
+          document.getElementById("sc-thumb"),
+          document.getElementById("sc-value"),
+          y
+        );
+        const c1On = frame >= RANGES.scopes[0] + 60;
+        const c2On = frame >= RANGES.scopes[0] + 90;
+        setChecked(document.getElementById("sc-c1"), c1On);
+        setChecked(document.getElementById("sc-c2"), c2On);
+        setCaption("Height slider and Apply to", "Raise offset; enable other players and NPCs / minions / objects");
+      } else if (frame < RANGES.reset[1]) {
+        showLayer("scene-reset");
+        const t = ease(segmentProgress(frame, RANGES.reset[0] + 10, RANGES.reset[1] - 20));
+        const y = lerp(1.2, 0, t);
+        setSlider(
+          document.getElementById("rs-fill"),
+          document.getElementById("rs-thumb"),
+          document.getElementById("rs-value"),
+          y
+        );
+        setCaption("Reset offset", "Height at +0.00 yalms (same as /npoffset 0)");
+      } else if (frame < RANGES.visual[1]) {
+        showLayer("scene-visual");
+        const t = ease(segmentProgress(frame, RANGES.visual[0] + 20, RANGES.visual[0] + 120));
+        const baseBottom = 188;
+        const raisedBottom = 218;
+        const bottom = lerp(baseBottom, raisedBottom, t);
+        document.getElementById("np-right").style.bottom = `${bottom}px`;
+        const arrowH = lerp(0, 18, t);
+        const arrow = document.getElementById("np-arrow");
+        arrow.style.height = `${arrowH}px`;
+        arrow.style.bottom = `${198}px`;
+        setCaption("Vertical offset effect", "Stylised scene — nameplate raised for My character scope");
+      } else {
+        showLayer("scene-cmds");
+        const local = frame - RANGES.cmds[0];
+        const steps = [
+          { at: 0, ids: ["chat-0"] },
+          { at: 45, ids: ["chat-0"], window: true },
+          { at: 120, ids: ["chat-0", "chat-1"], window: true },
+          { at: 210, ids: ["chat-0", "chat-1", "chat-2"], window: true },
+        ];
+        let visible = [];
+        let showWindow = false;
+        for (const step of steps) {
+          if (local >= step.at) {
+            visible = step.ids;
+            if (step.window) showWindow = true;
+          }
+        }
+        for (let i = 0; i < 3; i++) {
+          const el = document.getElementById(`chat-${i}`);
+          el.classList.toggle("hidden", !visible.includes(`chat-${i}`));
+        }
+        document.getElementById("cmd-window").style.opacity = showWindow ? "1" : "0";
+        setCaption("/npoffset commands", "Toggle window, set yalms, reset — mock chat lines");
+      }
+
+      if (frame < RANGES.default[0]) {
+        setCaption("UI mock-up — not an in-game capture", "Nameplate Offset plugin");
+      }
+    }
+
+    window.renderWalkthroughFrame = renderFrame;
+    window.WALKTHROUGH_TOTAL_FRAMES = TOTAL_FRAMES;
+    window.WALKTHROUGH_FPS = FPS;
+
+    renderFrame(0);
+  </script>
+</body>
+</html>

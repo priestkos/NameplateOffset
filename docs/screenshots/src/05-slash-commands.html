@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>05 — /npoffset slash commands</title>
+  <link rel="stylesheet" href="dalamud-imgui.css" />
+  <style>
+    .cmd-help {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      max-width: 420px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      font-size: 12px;
+      color: #bbb;
+      line-height: 1.5;
+    }
+    .cmd-help strong {
+      color: #8fd4ff;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" id="capture">
+    <div class="scene-floor"></div>
+    <div class="character-silhouette" style="left: 640px;"></div>
+    <div class="nameplate" style="left: 640px; bottom: 218px;">
+      <div class="nameplate-bar" style="background: #48a868;"></div>
+      <div class="nameplate-name">Example Character</div>
+    </div>
+
+    <div class="cmd-help">
+      <strong>/npoffset</strong> — Open the nameplate height window, or: /npoffset &lt;yalms&gt;  e.g. /npoffset 0.35
+    </div>
+
+    <div class="imgui-window" style="top: 24px; right: 24px;">
+      <div class="imgui-titlebar">
+        <span>Nameplate Offset</span>
+        <span class="close"></span>
+      </div>
+      <div class="imgui-body">
+        <p class="help">Raises the plate above your head. 1 yalm = 1 in-game metre.</p>
+        <div class="slider-row">
+          <label>Height (yalms)</label>
+          <div class="slider-track">
+            <div class="slider-fill" style="width: 37%"></div>
+            <div class="slider-thumb" style="left: 37%"></div>
+          </div>
+          <span class="slider-value">+0.35</span>
+        </div>
+        <div class="label-disabled" style="margin-top:8px;">Apply to:</div>
+        <div class="checkbox-row">
+          <span class="checkbox-box checked">✓</span>
+          <span>My character</span>
+        </div>
+        <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="chat-line cmd">/npoffset</div>
+      <div class="chat-line cmd">/npoffset 0.35</div>
+      <div class="chat-line cmd">/npoffset 0</div>
+    </div>
+  </div>
+</body>
+</html>
