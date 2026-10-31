@@ -1,0 +1,145 @@
+/* Walkthrough video layout (mock-up, not game capture). */
+html,
+body {
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  background: #0d0d0f;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layer.active {
+  opacity: 1;
+}
+
+/* Centered config-only scenes */
+.layer.config-only {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 48px;
+  background: #121218;
+}
+
+.layer.config-only .imgui-window {
+  position: relative;
+}
+
+/* Scene 4 extras */
+.compare-label {
+  position: absolute;
+  top: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 3px #000;
+}
+
+.offset-arrow {
+  position: absolute;
+  width: 2px;
+  background: rgba(120, 200, 255, 0.8);
+}
+
+.offset-arrow::after {
+  content: "▲";
+  position: absolute;
+  top: -14px;
+  left: -5px;
+  color: rgba(120, 200, 255, 0.9);
+  font-size: 12px;
+}
+
+/* Scene 5 */
+.cmd-help {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  max-width: 420px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #bbb;
+  line-height: 1.5;
+}
+
+.cmd-help strong {
+  color: #8fd4ff;
+  font-weight: 600;
+}
+
+.chat-line.hidden {
+  visibility: hidden;
+}
+
+/* Overlays */
+.disclaimer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 100;
+  text-align: center;
+  padding: 40px;
+}
+
+.disclaimer-inner {
+  max-width: 720px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 28px 36px;
+  background: rgba(18, 18, 24, 0.95);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.disclaimer-inner h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #f4f4f4;
+  margin-bottom: 12px;
+}
+
+.disclaimer-inner p {
+  font-size: 15px;
+  color: #c8c8c8;
+  line-height: 1.5;
+}
+
+.caption-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  padding: 14px 24px 18px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+  font-size: 16px;
+  font-weight: 600;
+  color: #f0f0f0;
+  text-shadow: 0 1px 4px #000;
+}
+
+.caption-bar span.sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #aaa;
+  margin-top: 4px;
+}

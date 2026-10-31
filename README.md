@@ -36,6 +36,16 @@ Screenshots are mock-ups illustrating the UI, not captures from the live game.
 
 Mock-up sources live under `docs/screenshots/src/`; regenerate PNGs with `node docs/screenshots/src/render.mjs` (requires `npm install playwright` in that folder once).
 
+### Mock-up video
+
+The clip below is a **UI mock-up walkthrough** (same stylised scenes as the screenshots), **not** footage from the live game.
+
+![Mock-up walkthrough preview](docs/videos/mockup-walkthrough.gif)
+
+[Download mockup-walkthrough.mp4](docs/videos/mockup-walkthrough.mp4) (H.264, 1280×720)
+
+Regenerate with `npm install` and `node docs/videos/src/render.mjs` in `docs/videos/src/` (Playwright + ffmpeg).
+
 ## What it does
 
 - **Offsets the plate vertically** — in yalms (1 yalm = 1 m), slider −1.5 to +3.0, default 0.35.
