@@ -28,7 +28,7 @@
           <div class="imgui-spacing"></div>
           <div class="slider-row">
             <label>Height (yalms)</label>
-            <div class="slider-track">
+            <div class="slider-track" id="sd-track">
               <div class="slider-fill" id="sd-fill"></div>
               <div class="slider-thumb" id="sd-thumb"></div>
             </div>
@@ -53,7 +53,7 @@
       </div>
     </div>
 
-    <!-- Scene B: height + scopes (animated from scene A state) -->
+    <!-- Scene B: height + scopes -->
     <div class="layer config-only" id="scene-scopes">
       <div class="imgui-window">
         <div class="imgui-titlebar">
@@ -65,7 +65,7 @@
           <div class="imgui-spacing"></div>
           <div class="slider-row">
             <label>Height (yalms)</label>
-            <div class="slider-track">
+            <div class="slider-track" id="sc-track">
               <div class="slider-fill" id="sc-fill"></div>
               <div class="slider-thumb" id="sc-thumb"></div>
             </div>
@@ -102,7 +102,7 @@
           <div class="imgui-spacing"></div>
           <div class="slider-row">
             <label>Height (yalms)</label>
-            <div class="slider-track">
+            <div class="slider-track" id="rs-track">
               <div class="slider-fill" id="rs-fill"></div>
               <div class="slider-thumb" id="rs-thumb"></div>
             </div>
@@ -207,7 +207,7 @@
             <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
           </div>
         </div>
-        <div class="chat-panel">
+        <div class="chat-panel" id="chat-panel">
           <div class="chat-line cmd hidden" id="chat-0">/npoffset</div>
           <div class="chat-line cmd hidden" id="chat-1">/npoffset 0.35</div>
           <div class="chat-line cmd hidden" id="chat-2">/npoffset 0</div>
@@ -219,21 +219,40 @@
       <span id="caption-title">UI mock-up — not an in-game capture</span>
       <span class="sub" id="caption-sub">Nameplate Offset plugin</span>
     </div>
+
+    <div id="cursor-layer">
+      <div id="cursor-ripples"></div>
+      <div id="cursor-pointer" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 3L5 19L9 15L13 21L15 20L11 14L16 14L5 3Z" fill="#ffffff" stroke="#1a1a22" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
   </div>
 
   <script>
     /** Deterministic timeline: frame index → visuals (30 fps, 45 s). */
     const FPS = 30;
     const TOTAL_FRAMES = 45 * FPS;
+    const FADE_FRAMES = 18;
 
     const RANGES = {
       disclaimer: [0, 90],
       default: [90, 270],
-      scopes: [270, 450],
-      reset: [450, 600],
-      visual: [600, 840],
-      cmds: [840, TOTAL_FRAMES],
+      scopes: [270, 480],
+      reset: [480, 630],
+      visual: [630, 870],
+      cmds: [870, TOTAL_FRAMES],
     };
+
+    const SCENE_IDS = ["scene-default", "scene-scopes", "scene-reset", "scene-visual", "scene-cmds"];
+
+    const stageEl = document.getElementById("stage");
+    const cursorEl = document.getElementById("cursor-pointer");
+    const ripplesEl = document.getElementById("cursor-ripples");
+
+    /** Cached element centres in stage coordinates. */
+    let measureCache = null;
 
     function clamp(v, lo, hi) {
       return Math.min(hi, Math.max(lo, v));
@@ -243,8 +262,16 @@
       return a + (b - a) * t;
     }
 
+    /** Smoothstep ease. */
     function ease(t) {
-      return t * t * (3 - 2 * t);
+      const x = clamp(t, 0, 1);
+      return x * x * (3 - 2 * x);
+    }
+
+    /** Ease in-out cubic for pointer travel. */
+    function easeInOutCubic(t) {
+      const x = clamp(t, 0, 1);
+      return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
     }
 
     function segmentProgress(frame, start, end) {
@@ -253,7 +280,6 @@
       return (frame - start) / (end - start);
     }
 
-    /** Map yalms (−1.5…+3.0) to slider percent (matches static mock-ups). */
     function yalmsToPct(y) {
       return clamp(((y + 1.5) / 4.5) * 100, 0, 100);
     }
@@ -276,18 +302,161 @@
       }
     }
 
-    function showLayer(id) {
-      for (const el of document.querySelectorAll(".layer")) {
-        el.classList.toggle("active", el.id === id);
-      }
-    }
-
     function setCaption(title, sub) {
       document.getElementById("caption-title").textContent = title;
       document.getElementById("caption-sub").textContent = sub;
     }
 
+    function stagePoint(el) {
+      const sr = stageEl.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      return { x: r.left - sr.left + r.width / 2, y: r.top - sr.top + r.height / 2 };
+    }
+
+    function sliderPoint(trackEl, yalms) {
+      const sr = stageEl.getBoundingClientRect();
+      const r = trackEl.getBoundingClientRect();
+      const pct = yalmsToPct(yalms) / 100;
+      return {
+        x: r.left - sr.left + r.width * pct,
+        y: r.top - sr.top + r.height / 2,
+      };
+    }
+
+    function measureLayout() {
+      const prev = {};
+      for (const id of SCENE_IDS) {
+        const el = document.getElementById(id);
+        prev[id] = { opacity: el.style.opacity, display: el.style.display, transform: el.style.transform };
+        el.style.display = id.includes("config") ? "flex" : "block";
+        el.style.opacity = "1";
+        el.style.transform = "none";
+      }
+      measureCache = {
+        sdSlider035: sliderPoint(document.getElementById("sd-track"), 0.35),
+        scSlider035: sliderPoint(document.getElementById("sc-track"), 0.35),
+        scSlider120: sliderPoint(document.getElementById("sc-track"), 1.2),
+        scC1: stagePoint(document.getElementById("sc-c1")),
+        scC2: stagePoint(document.getElementById("sc-c2")),
+        rsSlider120: sliderPoint(document.getElementById("rs-track"), 1.2),
+        rsSlider0: sliderPoint(document.getElementById("rs-track"), 0),
+        chatPanel: stagePoint(document.getElementById("chat-panel")),
+        chat0: stagePoint(document.getElementById("chat-0")),
+        chat1: stagePoint(document.getElementById("chat-1")),
+        chat2: stagePoint(document.getElementById("chat-2")),
+        visWindow: stagePoint(document.querySelector("#scene-visual .imgui-window")),
+      };
+      for (const id of SCENE_IDS) {
+        const el = document.getElementById(id);
+        el.style.opacity = prev[id].opacity;
+        el.style.display = prev[id].display;
+        el.style.transform = prev[id].transform;
+      }
+    }
+
+    /** Active ripples: { x, y, startFrame } */
+    const ripples = [];
+
+    function triggerRipple(x, y, frame) {
+      ripples.push({ x, y, startFrame: frame });
+    }
+
+    function drawRipples(frame) {
+      ripplesEl.innerHTML = "";
+      const duration = 20;
+      for (const rip of ripples) {
+        const age = frame - rip.startFrame;
+        if (age < 0 || age > duration) continue;
+        const t = age / duration;
+        const scale = lerp(0.6, 2.4, ease(t));
+        const opacity = 1 - ease(t);
+        const node = document.createElement("div");
+        node.className = "click-ripple";
+        node.style.left = `${rip.x}px`;
+        node.style.top = `${rip.y}px`;
+        node.style.transform = `scale(${scale})`;
+        node.style.opacity = String(opacity * 0.9);
+        ripplesEl.appendChild(node);
+      }
+    }
+
+    function setCursor(x, y, visible, pressed) {
+      cursorEl.style.transform = `translate(${x}px, ${y}px)`;
+      cursorEl.classList.toggle("visible", visible);
+      cursorEl.classList.toggle("pressed", pressed);
+    }
+
+    /** Move pointer along eased path between keyframes. */
+    function cursorAlong(frame, keyframes) {
+      if (keyframes.length === 0) return { x: 640, y: 360, visible: false, pressed: false };
+      if (frame <= keyframes[0].f) {
+        const k = keyframes[0];
+        return { x: k.x, y: k.y, visible: k.visible !== false, pressed: false };
+      }
+      for (let i = 0; i < keyframes.length - 1; i++) {
+        const a = keyframes[i];
+        const b = keyframes[i + 1];
+        if (frame >= a.f && frame <= b.f) {
+          const t = easeInOutCubic((frame - a.f) / (b.f - a.f));
+          return {
+            x: lerp(a.x, b.x, t),
+            y: lerp(a.y, b.y, t),
+            visible: a.visible !== false && b.visible !== false,
+            pressed: false,
+          };
+        }
+      }
+      const last = keyframes[keyframes.length - 1];
+      return { x: last.x, y: last.y, visible: last.visible !== false, pressed: false };
+    }
+
+    function isClickFrame(frame, clickFrames) {
+      return clickFrames.some((cf) => frame >= cf && frame < cf + 4);
+    }
+
+    function sceneLayerOpacity(frame, sceneKey, sceneId) {
+      const [start, end] = RANGES[sceneKey];
+      if (frame < start - FADE_FRAMES || frame >= end + FADE_FRAMES) {
+        return { opacity: 0, active: false };
+      }
+      let opacity = 0;
+      if (frame >= start && frame < end) {
+        opacity = 1;
+      }
+      if (frame >= start - FADE_FRAMES && frame < start) {
+        opacity = ease(segmentProgress(frame, start - FADE_FRAMES, start));
+      }
+      if (frame >= end && frame < end + FADE_FRAMES) {
+        opacity = 1 - ease(segmentProgress(frame, end, end + FADE_FRAMES));
+      }
+      const enterT = segmentProgress(frame, start, start + FADE_FRAMES);
+      const slide = frame >= start && frame < start + FADE_FRAMES ? lerp(10, 0, ease(enterT)) : 0;
+      const el = document.getElementById(sceneId);
+      el.style.opacity = String(opacity);
+      el.style.transform = `translateY(${slide}px)`;
+      el.style.display = opacity > 0.01 ? (sceneId.includes("config") ? "flex" : "block") : "none";
+      return { opacity, active: opacity > 0.5 };
+    }
+
+    function applySceneLayers(frame) {
+      const keys = [
+        ["default", "scene-default"],
+        ["scopes", "scene-scopes"],
+        ["reset", "scene-reset"],
+        ["visual", "scene-visual"],
+        ["cmds", "scene-cmds"],
+      ];
+      let primary = null;
+      for (const [key, id] of keys) {
+        const st = sceneLayerOpacity(frame, key, id);
+        if (st.active) primary = id;
+      }
+      return primary;
+    }
+
     function renderFrame(frame) {
+      if (!measureCache) measureLayout();
+
       const disclaimer = document.getElementById("disclaimer");
       const dProg = segmentProgress(frame, RANGES.disclaimer[0], RANGES.disclaimer[1]);
       let dOpacity = 1;
@@ -296,8 +465,12 @@
       disclaimer.style.opacity = String(dOpacity);
       disclaimer.style.display = dOpacity <= 0.01 ? "none" : "flex";
 
-      if (frame < RANGES.default[1]) {
-        showLayer("scene-default");
+      applySceneLayers(frame);
+
+      let cursor = { x: 640, y: 200, visible: false, pressed: false };
+      const clickFrames = [];
+
+      if (frame >= RANGES.default[0] && frame < RANGES.default[1]) {
         setCaption("Default configuration window", "Intro, Height (yalms) +0.35, Apply to defaults");
         setSlider(
           document.getElementById("sd-fill"),
@@ -305,78 +478,214 @@
           document.getElementById("sd-value"),
           0.35
         );
-      } else if (frame < RANGES.scopes[1]) {
-        showLayer("scene-scopes");
-        const t = ease(segmentProgress(frame, RANGES.scopes[0] + 15, RANGES.scopes[1] - 30));
-        const y = lerp(0.35, 1.2, t);
-        setSlider(
-          document.getElementById("sc-fill"),
-          document.getElementById("sc-thumb"),
-          document.getElementById("sc-value"),
-          y
-        );
-        const c1On = frame >= RANGES.scopes[0] + 60;
-        const c2On = frame >= RANGES.scopes[0] + 90;
-        setChecked(document.getElementById("sc-c1"), c1On);
-        setChecked(document.getElementById("sc-c2"), c2On);
+        const local = frame - RANGES.default[0];
+        const m = measureCache;
+        cursor = cursorAlong(local, [
+          { f: 12, x: m.sdSlider035.x + 80, y: m.sdSlider035.y + 60, visible: false },
+          { f: 36, x: m.sdSlider035.x, y: m.sdSlider035.y },
+          { f: 120, x: m.sdSlider035.x, y: m.sdSlider035.y },
+          { f: 150, x: stagePoint(document.getElementById("sd-c0")).x, y: stagePoint(document.getElementById("sd-c0")).y },
+          { f: 180, x: stagePoint(document.getElementById("sd-c1")).x, y: stagePoint(document.getElementById("sd-c1")).y },
+        ]);
+        if (local === 152) clickFrames.push(frame);
+        cursor.visible = local >= 30;
+        cursor.pressed = isClickFrame(local, [152, 153, 154]);
+      } else if (frame >= RANGES.scopes[0] && frame < RANGES.scopes[1]) {
         setCaption("Height slider and Apply to", "Raise offset; enable other players and NPCs / minions / objects");
-      } else if (frame < RANGES.reset[1]) {
-        showLayer("scene-reset");
-        const t = ease(segmentProgress(frame, RANGES.reset[0] + 10, RANGES.reset[1] - 20));
-        const y = lerp(1.2, 0, t);
+        const local = frame - RANGES.scopes[0];
+        const m = measureCache;
+        const scThumb = document.getElementById("sc-thumb");
+        const scTrack = document.getElementById("sc-track");
+        const scFill = document.getElementById("sc-fill");
+        const scValue = document.getElementById("sc-value");
+        const c1 = document.getElementById("sc-c1");
+        const c2 = document.getElementById("sc-c2");
+
+        let yalms = 0.35;
+        scTrack.classList.remove("track-active");
+        scThumb.classList.remove("dragging");
+        c1.classList.remove("click-flash");
+        c2.classList.remove("click-flash");
+
+        if (local < 45) {
+          cursor = cursorAlong(local, [
+            { f: 0, x: m.scSlider035.x - 40, y: m.scSlider035.y + 50 },
+            { f: 30, x: m.scSlider035.x, y: m.scSlider035.y },
+          ]);
+          yalms = 0.35;
+        } else if (local < 120) {
+          const dragT = easeInOutCubic(segmentProgress(local, 45, 115));
+          yalms = lerp(0.35, 1.2, dragT);
+          cursor = {
+            x: sliderPoint(scTrack, yalms).x,
+            y: sliderPoint(scTrack, yalms).y,
+            visible: true,
+            pressed: true,
+          };
+          scTrack.classList.add("track-active");
+          scThumb.classList.add("dragging");
+        } else if (local < 155) {
+          yalms = 1.2;
+          cursor = cursorAlong(local - 120, [
+            { f: 0, x: m.scSlider120.x, y: m.scSlider120.y },
+            { f: 30, x: m.scC1.x, y: m.scC1.y },
+          ]);
+          cursor.visible = true;
+        } else if (local < 195) {
+          yalms = 1.2;
+          setChecked(c1, local >= 162);
+          cursor = { x: m.scC1.x, y: m.scC1.y, visible: true, pressed: isClickFrame(local, [155, 156, 157]) };
+          if (local === 155) {
+            clickFrames.push(frame);
+            c1.classList.add("click-flash");
+          }
+        } else {
+          yalms = 1.2;
+          setChecked(c1, true);
+          cursor = cursorAlong(local - 195, [
+            { f: 0, x: m.scC1.x, y: m.scC1.y },
+            { f: 30, x: m.scC2.x, y: m.scC2.y },
+          ]);
+          setChecked(c2, local >= 232);
+          if (local === 225) {
+            clickFrames.push(frame);
+            c2.classList.add("click-flash");
+          }
+          cursor.visible = true;
+          cursor.pressed = isClickFrame(local, [225, 226, 227]);
+        }
+
+        setSlider(scFill, scThumb, scValue, yalms);
+      } else if (frame >= RANGES.reset[0] && frame < RANGES.reset[1]) {
+        setCaption("Reset offset", "Height at +0.00 yalms (same as /npoffset 0)");
+        const local = frame - RANGES.reset[0];
+        const m = measureCache;
+        const rsTrack = document.getElementById("rs-track");
+        const rsThumb = document.getElementById("rs-thumb");
+        rsTrack.classList.remove("track-active");
+        rsThumb.classList.remove("dragging");
+
+        let yalms = 1.2;
+        if (local < 35) {
+          cursor = cursorAlong(local, [
+            { f: 0, x: m.rsSlider120.x + 50, y: m.rsSlider120.y + 40 },
+            { f: 28, x: m.rsSlider120.x, y: m.rsSlider120.y },
+          ]);
+        } else {
+          const dragT = easeInOutCubic(segmentProgress(local, 35, 120));
+          yalms = lerp(1.2, 0, dragT);
+          cursor = {
+            x: sliderPoint(rsTrack, yalms).x,
+            y: sliderPoint(rsTrack, yalms).y,
+            visible: true,
+            pressed: true,
+          };
+          rsTrack.classList.add("track-active");
+          rsThumb.classList.add("dragging");
+        }
         setSlider(
           document.getElementById("rs-fill"),
-          document.getElementById("rs-thumb"),
+          rsThumb,
           document.getElementById("rs-value"),
-          y
+          yalms
         );
-        setCaption("Reset offset", "Height at +0.00 yalms (same as /npoffset 0)");
-      } else if (frame < RANGES.visual[1]) {
-        showLayer("scene-visual");
-        const t = ease(segmentProgress(frame, RANGES.visual[0] + 20, RANGES.visual[0] + 120));
+      } else if (frame >= RANGES.visual[0] && frame < RANGES.visual[1]) {
+        setCaption("Vertical offset effect", "Stylised scene — nameplate raised for My character scope");
+        const local = frame - RANGES.visual[0];
+        const t = ease(segmentProgress(local, 25, 130));
         const baseBottom = 188;
         const raisedBottom = 218;
-        const bottom = lerp(baseBottom, raisedBottom, t);
-        document.getElementById("np-right").style.bottom = `${bottom}px`;
+        document.getElementById("np-right").style.bottom = `${lerp(baseBottom, raisedBottom, t)}px`;
         const arrowH = lerp(0, 18, t);
-        const arrow = document.getElementById("np-arrow");
-        arrow.style.height = `${arrowH}px`;
-        arrow.style.bottom = `${198}px`;
-        setCaption("Vertical offset effect", "Stylised scene — nameplate raised for My character scope");
-      } else {
-        showLayer("scene-cmds");
+        document.getElementById("np-arrow").style.height = `${arrowH}px`;
+        const m = measureCache;
+        cursor = cursorAlong(local, [
+          { f: 20, x: 640, y: 400, visible: false },
+          { f: 50, x: m.visWindow.x + 40, y: m.visWindow.y + 30 },
+          { f: 200, x: 820, y: 340 },
+        ]);
+        cursor.visible = local >= 40;
+      } else if (frame >= RANGES.cmds[0]) {
+        setCaption("/npoffset commands", "Toggle window, set yalms, reset — mock chat lines");
         const local = frame - RANGES.cmds[0];
+        const m = measureCache;
+        const cmdWindow = document.getElementById("cmd-window");
         const steps = [
-          { at: 0, ids: ["chat-0"] },
-          { at: 45, ids: ["chat-0"], window: true },
-          { at: 120, ids: ["chat-0", "chat-1"], window: true },
-          { at: 210, ids: ["chat-0", "chat-1", "chat-2"], window: true },
+          { at: 0, ids: [] },
+          { at: 42, ids: ["chat-0"] },
+          { at: 115, ids: ["chat-0", "chat-1"] },
+          { at: 205, ids: ["chat-0", "chat-1", "chat-2"] },
         ];
         let visible = [];
         let showWindow = false;
         for (const step of steps) {
           if (local >= step.at) {
             visible = step.ids;
-            if (step.window) showWindow = true;
+            if (step.at >= 42) showWindow = step.at >= 42 && visible.includes("chat-0");
           }
         }
+        showWindow = local >= 42 && visible.includes("chat-0");
         for (let i = 0; i < 3; i++) {
           const el = document.getElementById(`chat-${i}`);
-          el.classList.toggle("hidden", !visible.includes(`chat-${i}`));
+          const show = visible.includes(`chat-${i}`);
+          el.classList.toggle("hidden", !show);
+          if (show && local === steps.find((s) => s.ids.includes(`chat-${i}`))?.at) {
+            el.style.opacity = "0";
+          } else if (show) {
+            const born = steps.find((s) => s.ids.includes(`chat-${i}`))?.at ?? 0;
+            const fade = ease(segmentProgress(local, born, born + 12));
+            el.style.opacity = String(fade);
+          }
         }
-        document.getElementById("cmd-window").style.opacity = showWindow ? "1" : "0";
-        setCaption("/npoffset commands", "Toggle window, set yalms, reset — mock chat lines");
+        const winFade = showWindow ? ease(segmentProgress(local, 42, 58)) : 0;
+        cmdWindow.style.opacity = String(winFade);
+        cmdWindow.classList.toggle("window-visible", showWindow && winFade > 0.5);
+
+        if (local < 38) {
+          cursor = cursorAlong(local, [
+            { f: 0, x: m.chatPanel.x - 60, y: m.chatPanel.y + 40, visible: false },
+            { f: 30, x: m.chat0.x, y: m.chat0.y },
+          ]);
+        } else if (local < 105) {
+          cursor = { x: m.chat0.x, y: m.chat0.y, visible: true, pressed: isClickFrame(local, [38, 39, 40]) };
+          if (local === 38) clickFrames.push(frame);
+        } else if (local < 195) {
+          cursor = cursorAlong(local - 105, [
+            { f: 0, x: m.chat0.x, y: m.chat0.y },
+            { f: 28, x: m.chat1.x, y: m.chat1.y },
+          ]);
+          cursor.visible = true;
+          if (local === 108) clickFrames.push(frame);
+          cursor.pressed = isClickFrame(local, [108, 109, 110]);
+        } else {
+          cursor = cursorAlong(local - 195, [
+            { f: 0, x: m.chat1.x, y: m.chat1.y },
+            { f: 28, x: m.chat2.x, y: m.chat2.y },
+          ]);
+          if (local === 198) clickFrames.push(frame);
+          cursor.pressed = isClickFrame(local, [198, 199, 200]);
+          cursor.visible = true;
+        }
       }
 
       if (frame < RANGES.default[0]) {
         setCaption("UI mock-up — not an in-game capture", "Nameplate Offset plugin");
       }
+
+      for (const cf of clickFrames) {
+        triggerRipple(cursor.x, cursor.y, cf);
+      }
+
+      const pressed = cursor.pressed || clickFrames.length > 0;
+      setCursor(cursor.x, cursor.y, cursor.visible, pressed);
+      drawRipples(frame);
     }
 
     window.renderWalkthroughFrame = renderFrame;
     window.WALKTHROUGH_TOTAL_FRAMES = TOTAL_FRAMES;
     window.WALKTHROUGH_FPS = FPS;
 
+    measureLayout();
     renderFrame(0);
   </script>
 </body>
