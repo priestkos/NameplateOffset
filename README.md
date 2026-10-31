@@ -1,5 +1,7 @@
 # Nameplate Offset
 
+<img src="images/icon.png" width="96">
+
 Raises or lowers the overhead nameplate of a game object in FFXIV, for players who want the plate
 clear of a mount, a hat or another plate. Scope is per object type.
 
