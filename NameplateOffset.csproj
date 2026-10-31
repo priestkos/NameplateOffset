@@ -10,7 +10,7 @@
     <Punchline>Raise or lower the nameplate above a character's head.</Punchline>
     <Description>Moves the in-world nameplate vertically by writing the game object's NameplateOffsetTarget field.
 Slider in yalms (1 yalm = 1 metre). Your own character, other players and NPCs/objects can be offset independently.</Description>
-    <RepoUrl>https://github.com/priestkos/ffxiv-nameplate-offset</RepoUrl>
+    <RepoUrl>https://github.com/priestkos/NameplateOffset</RepoUrl>
     <Tags>nameplate;ui;tweak</Tags>
 
     <AssemblyName>NameplateOffset</AssemblyName>
