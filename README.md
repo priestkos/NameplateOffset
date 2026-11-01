@@ -95,6 +95,10 @@ dotnet build -c Release    # zip in bin/Release/NameplateOffset/latest.zip
 properties — never add a hand-written `NameplateOffset.json` to the project; the packager merges one
 over the props.
 
+**Releases:** Each push to `main` that changes the plugin (not docs-only paths) creates a GitHub
+release automatically; the version is the csproj version when it is above the latest release tag,
+otherwise the latest release with the fourth component incremented by one.
+
 ## Install (dev plugin)
 
 1. `%APPDATA%\XIVLauncher\devPlugins\NameplateOffset\` must contain `NameplateOffset.dll` **and**

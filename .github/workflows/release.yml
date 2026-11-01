@@ -2,35 +2,194 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'images/**'
+      - 'screenshots/**'
+      - '*.png'
+      - '*.mp4'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: Resolve release plan
+        id: plan
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          function Normalize-VersionString([string]$raw) {
+            $parts = @($raw -split '\.' | ForEach-Object { $_.Trim() })
+            while ($parts.Count -lt 4) { $parts += '0' }
+            if ($parts.Count -gt 4) { $parts = $parts[0..3] }
+            return [version]::new(
+              [int]$parts[0],
+              [int]$parts[1],
+              [int]$parts[2],
+              [int]$parts[3]
+            )
+          }
+
+          function Format-VersionString([version]$v) {
+            return "$($v.Major).$($v.Minor).$($v.Build).$($v.Revision)"
+          }
+
+          function Read-CsprojVersion {
+            $csproj = Get-Content -Raw -Path 'NameplateOffset.csproj'
+            if ($csproj -notmatch '<Version>\s*([^<\s]+)\s*</Version>') {
+              throw 'Could not read <Version> from NameplateOffset.csproj'
+            }
+            return Normalize-VersionString $Matches[1]
+          }
+
+          function Get-HighestReleaseVersion {
+            $highest = $null
+            $page = 1
+            while ($true) {
+              $json = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100&page=$page" 2>$null
+              $apiOk = ($LASTEXITCODE -eq 0)
+              $global:LASTEXITCODE = 0
+              if (-not $apiOk -or [string]::IsNullOrWhiteSpace($json)) { break }
+              $releases = @($json | ConvertFrom-Json)
+              if ($releases.Count -eq 0) { break }
+              foreach ($release in $releases) {
+                $tag = [string]$release.tag_name
+                if ($tag -notmatch '^v(.+)$') { continue }
+                $ver = Normalize-VersionString $Matches[1]
+                if (-not $highest -or $ver -gt $highest) { $highest = $ver }
+              }
+              if ($releases.Count -lt 100) { break }
+              $page++
+            }
+            return $highest
+          }
+
+          function Write-PlanOutputs([hashtable]$map) {
+            $map.GetEnumerator() | ForEach-Object {
+              "$($_.Key)=$($_.Value)"
+            } | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+          }
+
+          $outputs = [ordered]@{ skip = 'false' }
+
+          if ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:GITHUB_REF -eq 'refs/heads/main') {
+            $sha = $env:GITHUB_SHA
+            $commitHasRelease = $false
+            $page = 1
+            while ($true) {
+              $json = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100&page=$page" 2>$null
+              $apiOk = ($LASTEXITCODE -eq 0)
+              $global:LASTEXITCODE = 0
+              if (-not $apiOk -or [string]::IsNullOrWhiteSpace($json)) { break }
+              $releases = @($json | ConvertFrom-Json)
+              if ($releases.Count -eq 0) { break }
+              foreach ($release in $releases) {
+                if ([string]$release.target_commitish -eq $sha) {
+                  Write-Host "Commit $sha already has release $($release.tag_name); skipping."
+                  $commitHasRelease = $true
+                  break
+                }
+              }
+              if ($commitHasRelease) { break }
+              if ($releases.Count -lt 100) { break }
+              $page++
+            }
+
+            if ($commitHasRelease) {
+              $outputs.skip = 'true'
+            } else {
+              $csprojVersion = Read-CsprojVersion
+              $latestRelease = Get-HighestReleaseVersion
+              if ($null -eq $latestRelease) {
+                $next = $csprojVersion
+              } elseif ($csprojVersion -gt $latestRelease) {
+                $next = $csprojVersion
+              } else {
+                $next = [version]::new(
+                  $latestRelease.Major,
+                  $latestRelease.Minor,
+                  $latestRelease.Build,
+                  $latestRelease.Revision + 1
+                )
+              }
+
+              $nextString = Format-VersionString $next
+              $tag = "v$nextString"
+              gh release view $tag 2>$null
+              $tagReleaseExists = ($LASTEXITCODE -eq 0)
+              $global:LASTEXITCODE = 0
+              if ($tagReleaseExists) {
+                Write-Host "Release $tag already exists; skipping."
+                $outputs.skip = 'true'
+              } else {
+                Write-Host "Automatic release version: $nextString (tag $tag)"
+                $outputs.mode = 'auto'
+                $outputs.version = $nextString
+                $outputs.tag = $tag
+              }
+            }
+          } elseif ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:GITHUB_REF -like 'refs/tags/v*') {
+            $outputs.mode = 'tag'
+            $outputs.tag = $env:GITHUB_REF_NAME
+          } elseif ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            $outputs.mode = 'dispatch'
+          } else {
+            throw "Unsupported event/ref: $($env:GITHUB_EVENT_NAME) $($env:GITHUB_REF)"
+          }
+
+          Write-PlanOutputs $outputs
+          exit 0
+
       - name: Set up .NET
+        if: steps.plan.outputs.skip != 'true'
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Install the Dalamud development distribution
+        if: steps.plan.outputs.skip != 'true'
         shell: pwsh
         run: |
           $dest = Join-Path $env:APPDATA 'XIVLauncher\addon\Hooks\dev'
           New-Item -ItemType Directory -Force -Path $dest | Out-Null
           Invoke-WebRequest -UseBasicParsing -Uri 'https://goatcorp.github.io/dalamud-distrib/latest.zip' -OutFile dalamud.zip
           Expand-Archive -Path dalamud.zip -DestinationPath $dest -Force
+          exit 0
 
       - name: Build NameplateOffset
-        run: dotnet build NameplateOffset.csproj -c Release
+        if: steps.plan.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.plan.outputs.version }}'
+          if ($version) {
+            dotnet build NameplateOffset.csproj -c Release `
+              -p:Version=$version `
+              -p:AssemblyVersion=$version `
+              -p:FileVersion=$version
+          } else {
+            dotnet build NameplateOffset.csproj -c Release
+          }
 
       - name: Publish GitHub Release
+        if: steps.plan.outputs.skip != 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -69,11 +228,24 @@ jobs:
 
           $assemblyVersion = [string]$manifest.AssemblyVersion
           $asset = $zip.FullName
+          $mode = '${{ steps.plan.outputs.mode }}'
 
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+          if ($mode -eq 'auto') {
+            $expected = '${{ steps.plan.outputs.version }}'
+            if ($assemblyVersion -ne $expected) {
+              throw "AssemblyVersion '$assemblyVersion' does not match computed version '$expected'."
+            }
+            $tag = '${{ steps.plan.outputs.tag }}'
+            gh release create $tag $asset --target $env:GITHUB_SHA --title $tag --generate-notes
+            exit 0
+          }
+
+          if ($mode -eq 'dispatch') {
             $tag = "v$assemblyVersion"
-            $null = gh release view $tag 2>$null
-            if ($LASTEXITCODE -eq 0) {
+            gh release view $tag 2>$null
+            $releaseExists = ($LASTEXITCODE -eq 0)
+            $global:LASTEXITCODE = 0
+            if ($releaseExists) {
               Write-Host "Release $tag already exists; skipping."
               exit 0
             }
@@ -81,9 +253,14 @@ jobs:
             exit 0
           }
 
-          $tag = $env:GITHUB_REF_NAME
-          $tagVersion = $tag -replace '^v', ''
-          if ($tagVersion -ne $assemblyVersion) {
-            throw "Tag version '$tagVersion' does not match AssemblyVersion '$assemblyVersion'."
+          if ($mode -eq 'tag') {
+            $tag = '${{ steps.plan.outputs.tag }}'
+            $tagVersion = $tag -replace '^v', ''
+            if ($tagVersion -ne $assemblyVersion) {
+              throw "Tag version '$tagVersion' does not match AssemblyVersion '$assemblyVersion'."
+            }
+            gh release create $tag $asset --title $tag --generate-notes
+            exit 0
           }
-          gh release create $tag $asset --title $tag --generate-notes
+
+          throw "Unknown release mode '$mode'."
