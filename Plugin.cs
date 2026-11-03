@@ -54,6 +54,9 @@ public sealed unsafe class Plugin : IDalamudPlugin
 
         this.config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
+        // A hand-edited config can hold NaN/Infinity or an out-of-range value.
+        this.config.Offset = float.IsFinite(this.config.Offset) ? Math.Clamp(this.config.Offset, -1.5f, 3f) : 0f;
+
         this.uiBuilder.Draw += this.DrawConfigWindow;
         this.uiBuilder.OpenConfigUi += this.OpenConfig;
         this.framework.Update += this.OnFrameworkUpdate;
@@ -70,6 +73,7 @@ public sealed unsafe class Plugin : IDalamudPlugin
     {
         this.framework.Update -= this.OnFrameworkUpdate;
         this.uiBuilder.Draw -= this.DrawConfigWindow;
+        this.uiBuilder.OpenConfigUi -= this.OpenConfig;
         this.commandManager.RemoveHandler(CommandName);
 
         // Put every plate back where the game wanted it.
@@ -87,7 +91,8 @@ public sealed unsafe class Plugin : IDalamudPlugin
             return;
         }
 
-        if (!float.TryParse(trimmed, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        if (!float.TryParse(trimmed, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            || !float.IsFinite(value))
         {
             this.log.Warning("Could not parse '{0}' as a number of yalms.", trimmed);
             return;
@@ -144,13 +149,19 @@ public sealed unsafe class Plugin : IDalamudPlugin
             var current = native->NameplateOffsetTarget.Y;
             float baseline;
 
-            if (this.tracked.TryGetValue(address, out var entry) && MathF.Abs(current - entry.Written) < 0.0001f)
+            // A non-finite value is never a baseline: keep the one we have, or leave the object alone.
+            if (this.tracked.TryGetValue(address, out var entry)
+                && (MathF.Abs(current - entry.Written) < 0.0001f || !float.IsFinite(current)))
             {
                 baseline = entry.Baseline;
             }
-            else
+            else if (float.IsFinite(current))
             {
                 baseline = current;
+            }
+            else
+            {
+                continue;
             }
 
             if (delta == 0f)
@@ -213,25 +224,26 @@ public sealed unsafe class Plugin : IDalamudPlugin
 
     private void RestoreAll()
     {
+        // Never dereference an address the object table no longer lists: it may have been freed.
+        var live = new HashSet<nint>();
+        foreach (var obj in this.objectTable)
+        {
+            if (obj is not null)
+            {
+                live.Add(obj.Address);
+            }
+        }
+
         foreach (var (address, entry) in this.tracked)
         {
-            try
+            if (!live.Contains(address))
             {
-                // Never dereference an address the object table no longer knows: it may have been freed.
-                var obj = this.objectTable.CreateObjectReference(address);
-                if (obj is null || obj.Address != address)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var native = (GameObject*)address;
-                native->NameplateOffsetTarget.Y = entry.Baseline;
-                native->NameplateOffset.Y = entry.Baseline;
-            }
-            catch
-            {
-                // The object is gone; nothing to restore.
-            }
+            var native = (GameObject*)address;
+            native->NameplateOffsetTarget.Y = entry.Baseline;
+            native->NameplateOffset.Y = entry.Baseline;
         }
 
         this.tracked.Clear();
