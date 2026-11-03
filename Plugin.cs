@@ -55,7 +55,7 @@ public sealed unsafe class Plugin : IDalamudPlugin
         this.config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // A hand-edited config can hold NaN/Infinity or an out-of-range value.
-        this.config.Offset = float.IsFinite(this.config.Offset) ? Math.Clamp(this.config.Offset, -1.5f, 3f) : 0f;
+        this.config.Offset = OffsetRules.Sanitize(this.config.Offset);
 
         this.uiBuilder.Draw += this.DrawConfigWindow;
         this.uiBuilder.OpenConfigUi += this.OpenConfig;
@@ -91,14 +91,13 @@ public sealed unsafe class Plugin : IDalamudPlugin
             return;
         }
 
-        if (!float.TryParse(trimmed, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
-            || !float.IsFinite(value))
+        if (!OffsetRules.TryParse(trimmed, out var value))
         {
             this.log.Warning("Could not parse '{0}' as a number of yalms.", trimmed);
             return;
         }
 
-        this.config.Offset = Math.Clamp(value, -1.5f, 3f);
+        this.config.Offset = value;
         this.pluginInterface.SavePluginConfig(this.config);
         this.RestoreAll();
     }
@@ -147,19 +146,10 @@ public sealed unsafe class Plugin : IDalamudPlugin
             // The game rewrites NameplateOffsetTarget on spawn, mount and transform changes.
             // If the value is not what we last wrote, that is the game talking: adopt it as the new baseline.
             var current = native->NameplateOffsetTarget.Y;
-            float baseline;
+            var isTracked = this.tracked.TryGetValue(address, out var entry);
 
             // A non-finite value is never a baseline: keep the one we have, or leave the object alone.
-            if (this.tracked.TryGetValue(address, out var entry)
-                && (MathF.Abs(current - entry.Written) < 0.0001f || !float.IsFinite(current)))
-            {
-                baseline = entry.Baseline;
-            }
-            else if (float.IsFinite(current))
-            {
-                baseline = current;
-            }
-            else
+            if (!OffsetRules.TryPickBaseline(isTracked, entry.Baseline, entry.Written, current, out var baseline))
             {
                 continue;
             }
