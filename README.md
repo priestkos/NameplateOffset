@@ -11,7 +11,7 @@ clear of a mount, a hat or another plate. Scope is per object type.
 
 ## Screenshots
 
-Screenshots are mock-ups illustrating the UI, not captures from the live game.
+Screenshots are mock-ups illustrating the UI, not captures from the live game. Each frame shows a gold **Mock-up** badge and a bottom caption naming the screen.
 
 | | |
 | --- | --- |
@@ -40,11 +40,11 @@ Screenshots are mock-ups illustrating the UI, not captures from the live game.
 
 ### Mock-up video
 
-The clip below is a **UI mock-up walkthrough** (same stylised scenes as the screenshots), **not** footage from the live game.
+The clip below is a **UI mock-up walkthrough** (same stylised scenes as the screenshots), **not** footage from the live game. The gold **Mock-up** label stays visible for the whole clip (~15 s).
 
 ![Mock-up walkthrough preview](docs/videos/mockup-walkthrough.gif)
 
-[Download mockup-walkthrough.mp4](docs/videos/mockup-walkthrough.mp4) (H.264, 1280×720)
+[Download mockup-walkthrough.mp4](docs/videos/mockup-walkthrough.mp4) (H.264, 1280×720, ~15 s)
 
 ## What it does
 

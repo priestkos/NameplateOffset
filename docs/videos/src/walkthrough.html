@@ -8,13 +8,8 @@
 </head>
 <body>
   <div id="stage">
-    <!-- Disclaimer (opacity driven by frame) -->
-    <div class="disclaimer" id="disclaimer">
-      <div class="disclaimer-inner">
-        <h1>UI mock-up walkthrough</h1>
-        <p>Illustrations only — not a capture from the live FFXIV client.</p>
-      </div>
-    </div>
+    <div class="mockup-banner">Mock-up</div>
+    <div class="beat-label" id="beat-label">Default configuration window</div>
 
     <!-- Scene A: default window -->
     <div class="layer config-only" id="scene-default">
@@ -231,18 +226,26 @@
   </div>
 
   <script>
-    /** Deterministic timeline: frame index → visuals (30 fps, 45 s). */
+    /** Deterministic timeline: frame index → visuals (30 fps, 15 s). */
     const FPS = 30;
-    const TOTAL_FRAMES = 45 * FPS;
-    const FADE_FRAMES = 18;
+    const DURATION_SEC = 15;
+    const TOTAL_FRAMES = DURATION_SEC * FPS;
+    const FADE_FRAMES = 10;
 
     const RANGES = {
-      disclaimer: [0, 90],
-      default: [90, 270],
-      scopes: [270, 480],
-      reset: [480, 630],
-      visual: [630, 870],
-      cmds: [870, TOTAL_FRAMES],
+      default: [0, 90],
+      scopes: [78, 168],
+      reset: [156, 246],
+      visual: [234, 324],
+      cmds: [312, TOTAL_FRAMES],
+    };
+
+    const BEAT_LABELS = {
+      default: "Default configuration window",
+      scopes: "Height slider and Apply to",
+      reset: "Reset offset",
+      visual: "Vertical offset effect",
+      cmds: "/npoffset commands",
     };
 
     const SCENE_IDS = ["scene-default", "scene-scopes", "scene-reset", "scene-visual", "scene-cmds"];
@@ -300,6 +303,15 @@
         el.classList.remove("checked");
         el.textContent = "";
       }
+    }
+
+    function setBeatLabel(text) {
+      const el = document.getElementById("beat-label");
+      el.textContent = text;
+    }
+
+    function setBeatVisible(visible) {
+      document.getElementById("beat-label").style.opacity = visible ? "1" : "0";
     }
 
     function setCaption(title, sub) {
@@ -446,24 +458,22 @@
         ["visual", "scene-visual"],
         ["cmds", "scene-cmds"],
       ];
-      let primary = null;
+      let primaryKey = null;
       for (const [key, id] of keys) {
         const st = sceneLayerOpacity(frame, key, id);
-        if (st.active) primary = id;
+        if (st.active) primaryKey = key;
       }
-      return primary;
+      if (primaryKey) {
+        setBeatLabel(BEAT_LABELS[primaryKey]);
+        setBeatVisible(true);
+      } else {
+        setBeatVisible(false);
+      }
+      return primaryKey;
     }
 
     function renderFrame(frame) {
       if (!measureCache) measureLayout();
-
-      const disclaimer = document.getElementById("disclaimer");
-      const dProg = segmentProgress(frame, RANGES.disclaimer[0], RANGES.disclaimer[1]);
-      let dOpacity = 1;
-      if (dProg < 0.15) dOpacity = ease(dProg / 0.15);
-      else if (dProg > 0.75) dOpacity = 1 - ease((dProg - 0.75) / 0.25);
-      disclaimer.style.opacity = String(dOpacity);
-      disclaimer.style.display = dOpacity <= 0.01 ? "none" : "flex";
 
       applySceneLayers(frame);
 
@@ -481,15 +491,15 @@
         const local = frame - RANGES.default[0];
         const m = measureCache;
         cursor = cursorAlong(local, [
-          { f: 12, x: m.sdSlider035.x + 80, y: m.sdSlider035.y + 60, visible: false },
-          { f: 36, x: m.sdSlider035.x, y: m.sdSlider035.y },
-          { f: 120, x: m.sdSlider035.x, y: m.sdSlider035.y },
-          { f: 150, x: stagePoint(document.getElementById("sd-c0")).x, y: stagePoint(document.getElementById("sd-c0")).y },
-          { f: 180, x: stagePoint(document.getElementById("sd-c1")).x, y: stagePoint(document.getElementById("sd-c1")).y },
+          { f: 4, x: m.sdSlider035.x + 80, y: m.sdSlider035.y + 60, visible: false },
+          { f: 12, x: m.sdSlider035.x, y: m.sdSlider035.y },
+          { f: 40, x: m.sdSlider035.x, y: m.sdSlider035.y },
+          { f: 50, x: stagePoint(document.getElementById("sd-c0")).x, y: stagePoint(document.getElementById("sd-c0")).y },
+          { f: 60, x: stagePoint(document.getElementById("sd-c1")).x, y: stagePoint(document.getElementById("sd-c1")).y },
         ]);
-        if (local === 152) clickFrames.push(frame);
-        cursor.visible = local >= 30;
-        cursor.pressed = isClickFrame(local, [152, 153, 154]);
+        if (local === 51) clickFrames.push(frame);
+        cursor.visible = local >= 10;
+        cursor.pressed = isClickFrame(local, [51, 52, 53]);
       } else if (frame >= RANGES.scopes[0] && frame < RANGES.scopes[1]) {
         setCaption("Height slider and Apply to", "Raise offset; enable other players and NPCs / minions / objects");
         const local = frame - RANGES.scopes[0];
@@ -507,14 +517,14 @@
         c1.classList.remove("click-flash");
         c2.classList.remove("click-flash");
 
-        if (local < 45) {
+        if (local < 15) {
           cursor = cursorAlong(local, [
             { f: 0, x: m.scSlider035.x - 40, y: m.scSlider035.y + 50 },
-            { f: 30, x: m.scSlider035.x, y: m.scSlider035.y },
+            { f: 10, x: m.scSlider035.x, y: m.scSlider035.y },
           ]);
           yalms = 0.35;
-        } else if (local < 120) {
-          const dragT = easeInOutCubic(segmentProgress(local, 45, 115));
+        } else if (local < 40) {
+          const dragT = easeInOutCubic(segmentProgress(local, 15, 38));
           yalms = lerp(0.35, 1.2, dragT);
           cursor = {
             x: sliderPoint(scTrack, yalms).x,
@@ -524,35 +534,35 @@
           };
           scTrack.classList.add("track-active");
           scThumb.classList.add("dragging");
-        } else if (local < 155) {
+        } else if (local < 52) {
           yalms = 1.2;
-          cursor = cursorAlong(local - 120, [
+          cursor = cursorAlong(local - 40, [
             { f: 0, x: m.scSlider120.x, y: m.scSlider120.y },
-            { f: 30, x: m.scC1.x, y: m.scC1.y },
+            { f: 10, x: m.scC1.x, y: m.scC1.y },
           ]);
           cursor.visible = true;
-        } else if (local < 195) {
+        } else if (local < 65) {
           yalms = 1.2;
-          setChecked(c1, local >= 162);
-          cursor = { x: m.scC1.x, y: m.scC1.y, visible: true, pressed: isClickFrame(local, [155, 156, 157]) };
-          if (local === 155) {
+          setChecked(c1, local >= 54);
+          cursor = { x: m.scC1.x, y: m.scC1.y, visible: true, pressed: isClickFrame(local, [52, 53, 54]) };
+          if (local === 52) {
             clickFrames.push(frame);
             c1.classList.add("click-flash");
           }
         } else {
           yalms = 1.2;
           setChecked(c1, true);
-          cursor = cursorAlong(local - 195, [
+          cursor = cursorAlong(local - 65, [
             { f: 0, x: m.scC1.x, y: m.scC1.y },
-            { f: 30, x: m.scC2.x, y: m.scC2.y },
+            { f: 10, x: m.scC2.x, y: m.scC2.y },
           ]);
-          setChecked(c2, local >= 232);
-          if (local === 225) {
+          setChecked(c2, local >= 77);
+          if (local === 75) {
             clickFrames.push(frame);
             c2.classList.add("click-flash");
           }
           cursor.visible = true;
-          cursor.pressed = isClickFrame(local, [225, 226, 227]);
+          cursor.pressed = isClickFrame(local, [75, 76, 77]);
         }
 
         setSlider(scFill, scThumb, scValue, yalms);
@@ -566,13 +576,13 @@
         rsThumb.classList.remove("dragging");
 
         let yalms = 1.2;
-        if (local < 35) {
+        if (local < 12) {
           cursor = cursorAlong(local, [
             { f: 0, x: m.rsSlider120.x + 50, y: m.rsSlider120.y + 40 },
-            { f: 28, x: m.rsSlider120.x, y: m.rsSlider120.y },
+            { f: 10, x: m.rsSlider120.x, y: m.rsSlider120.y },
           ]);
         } else {
-          const dragT = easeInOutCubic(segmentProgress(local, 35, 120));
+          const dragT = easeInOutCubic(segmentProgress(local, 12, 48));
           yalms = lerp(1.2, 0, dragT);
           cursor = {
             x: sliderPoint(rsTrack, yalms).x,
@@ -592,7 +602,7 @@
       } else if (frame >= RANGES.visual[0] && frame < RANGES.visual[1]) {
         setCaption("Vertical offset effect", "Stylised scene — nameplate raised for My character scope");
         const local = frame - RANGES.visual[0];
-        const t = ease(segmentProgress(local, 25, 130));
+        const t = ease(segmentProgress(local, 8, 52));
         const baseBottom = 188;
         const raisedBottom = 218;
         document.getElementById("np-right").style.bottom = `${lerp(baseBottom, raisedBottom, t)}px`;
@@ -600,11 +610,11 @@
         document.getElementById("np-arrow").style.height = `${arrowH}px`;
         const m = measureCache;
         cursor = cursorAlong(local, [
-          { f: 20, x: 640, y: 400, visible: false },
-          { f: 50, x: m.visWindow.x + 40, y: m.visWindow.y + 30 },
-          { f: 200, x: 820, y: 340 },
+          { f: 6, x: 640, y: 400, visible: false },
+          { f: 18, x: m.visWindow.x + 40, y: m.visWindow.y + 30 },
+          { f: 70, x: 820, y: 340 },
         ]);
-        cursor.visible = local >= 40;
+        cursor.visible = local >= 14;
       } else if (frame >= RANGES.cmds[0]) {
         setCaption("/npoffset commands", "Toggle window, set yalms, reset — mock chat lines");
         const local = frame - RANGES.cmds[0];
@@ -612,64 +622,60 @@
         const cmdWindow = document.getElementById("cmd-window");
         const steps = [
           { at: 0, ids: [] },
-          { at: 42, ids: ["chat-0"] },
-          { at: 115, ids: ["chat-0", "chat-1"] },
-          { at: 205, ids: ["chat-0", "chat-1", "chat-2"] },
+          { at: 14, ids: ["chat-0"] },
+          { at: 38, ids: ["chat-0", "chat-1"] },
+          { at: 68, ids: ["chat-0", "chat-1", "chat-2"] },
         ];
         let visible = [];
         let showWindow = false;
         for (const step of steps) {
           if (local >= step.at) {
             visible = step.ids;
-            if (step.at >= 42) showWindow = step.at >= 42 && visible.includes("chat-0");
+            if (step.at >= 14) showWindow = step.at >= 14 && visible.includes("chat-0");
           }
         }
-        showWindow = local >= 42 && visible.includes("chat-0");
+        showWindow = local >= 14 && visible.includes("chat-0");
         for (let i = 0; i < 3; i++) {
           const el = document.getElementById(`chat-${i}`);
           const show = visible.includes(`chat-${i}`);
           el.classList.toggle("hidden", !show);
-          if (show && local === steps.find((s) => s.ids.includes(`chat-${i}`))?.at) {
+            if (show && local === steps.find((s) => s.ids.includes(`chat-${i}`))?.at) {
             el.style.opacity = "0";
           } else if (show) {
             const born = steps.find((s) => s.ids.includes(`chat-${i}`))?.at ?? 0;
-            const fade = ease(segmentProgress(local, born, born + 12));
+            const fade = ease(segmentProgress(local, born, born + 8));
             el.style.opacity = String(fade);
           }
         }
-        const winFade = showWindow ? ease(segmentProgress(local, 42, 58)) : 0;
+        const winFade = showWindow ? ease(segmentProgress(local, 14, 22)) : 0;
         cmdWindow.style.opacity = String(winFade);
         cmdWindow.classList.toggle("window-visible", showWindow && winFade > 0.5);
 
-        if (local < 38) {
+        if (local < 12) {
           cursor = cursorAlong(local, [
             { f: 0, x: m.chatPanel.x - 60, y: m.chatPanel.y + 40, visible: false },
-            { f: 30, x: m.chat0.x, y: m.chat0.y },
+            { f: 10, x: m.chat0.x, y: m.chat0.y },
           ]);
-        } else if (local < 105) {
-          cursor = { x: m.chat0.x, y: m.chat0.y, visible: true, pressed: isClickFrame(local, [38, 39, 40]) };
-          if (local === 38) clickFrames.push(frame);
-        } else if (local < 195) {
-          cursor = cursorAlong(local - 105, [
+        } else if (local < 35) {
+          cursor = { x: m.chat0.x, y: m.chat0.y, visible: true, pressed: isClickFrame(local, [12, 13, 14]) };
+          if (local === 12) clickFrames.push(frame);
+        } else if (local < 62) {
+          cursor = cursorAlong(local - 35, [
             { f: 0, x: m.chat0.x, y: m.chat0.y },
-            { f: 28, x: m.chat1.x, y: m.chat1.y },
+            { f: 10, x: m.chat1.x, y: m.chat1.y },
           ]);
           cursor.visible = true;
-          if (local === 108) clickFrames.push(frame);
-          cursor.pressed = isClickFrame(local, [108, 109, 110]);
+          if (local === 36) clickFrames.push(frame);
+          cursor.pressed = isClickFrame(local, [36, 37, 38]);
         } else {
-          cursor = cursorAlong(local - 195, [
+          cursor = cursorAlong(local - 62, [
             { f: 0, x: m.chat1.x, y: m.chat1.y },
-            { f: 28, x: m.chat2.x, y: m.chat2.y },
+            { f: 10, x: m.chat2.x, y: m.chat2.y },
           ]);
-          if (local === 198) clickFrames.push(frame);
-          cursor.pressed = isClickFrame(local, [198, 199, 200]);
+          if (local === 66) clickFrames.push(frame);
+          cursor.pressed = isClickFrame(local, [66, 67, 68]);
           cursor.visible = true;
         }
-      }
-
-      if (frame < RANGES.default[0]) {
-        setCaption("UI mock-up — not an in-game capture", "Nameplate Offset plugin");
       }
 
       for (const cf of clickFrames) {
@@ -684,6 +690,7 @@
     window.renderWalkthroughFrame = renderFrame;
     window.WALKTHROUGH_TOTAL_FRAMES = TOTAL_FRAMES;
     window.WALKTHROUGH_FPS = FPS;
+    window.WALKTHROUGH_DURATION_SEC = DURATION_SEC;
 
     measureLayout();
     renderFrame(0);
