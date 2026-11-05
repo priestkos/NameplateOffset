@@ -5,12 +5,71 @@
   padding: 0;
 }
 
+html,
 body {
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 13px;
   color: #e8e8e8;
+}
+
+body {
   background: #0d0d0f;
   min-height: 100vh;
+}
+
+.mockup-banner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1a1200;
+  background: linear-gradient(135deg, #f5c842, #e8a020);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.scene-label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 9998;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ddd;
+  background: rgba(0, 0, 0, 0.72);
+  border-left: 3px solid #f5c842;
+  border-radius: 3px;
+  max-width: 90%;
+}
+
+body.mock-frame {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  margin: 0;
+  background: #121218;
+}
+
+body.mock-frame .mock-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 72px;
+}
+
+body.mock-frame .mock-content.scene-fill {
+  display: block;
+  padding: 0;
 }
 
 .scene {
@@ -257,15 +316,6 @@ body {
   font-family: inherit;
 }
 
-/* Crop layout: window only */
-body.crop-window {
-  background: #121218;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 24px;
-}
-
-body.crop-window .imgui-window {
+body.mock-frame .imgui-window {
   position: relative;
 }

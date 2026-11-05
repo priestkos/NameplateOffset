@@ -14,6 +14,8 @@ const htmlPath = path.join(__dirname, "walkthrough.html");
 const framesDir = path.join(__dirname, ".frames");
 
 const FPS = 30;
+const DURATION_SEC = 15;
+const FRAME_COUNT = FPS * DURATION_SEC;
 
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { stdio: "inherit", ...opts });
@@ -41,7 +43,10 @@ const context = await browser.newContext({
 const page = await context.newPage();
 await page.goto(`file://${htmlPath}`, { waitUntil: "load" });
 
-const totalFrames = await page.evaluate(() => window.WALKTHROUGH_TOTAL_FRAMES);
+const totalFrames = Math.min(
+  await page.evaluate(() => window.WALKTHROUGH_TOTAL_FRAMES),
+  FRAME_COUNT
+);
 console.log(`Rendering ${totalFrames} frames at ${FPS} fps (${(totalFrames / FPS).toFixed(1)} s)`);
 
 for (let frame = 0; frame < totalFrames; frame++) {
