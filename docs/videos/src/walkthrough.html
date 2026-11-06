@@ -9,7 +9,6 @@
 <body>
   <div id="stage">
     <div class="mockup-banner">Mock-up</div>
-    <div class="beat-label" id="beat-label">Default configuration window</div>
 
     <!-- Scene A: default window -->
     <div class="layer config-only" id="scene-default">
@@ -143,7 +142,7 @@
           <div class="nameplate-title">&lt;Placeholder&gt;</div>
         </div>
         <div class="offset-arrow" id="np-arrow" style="left: 820px; bottom: 198px; height: 0;"></div>
-        <div class="imgui-window" style="top: 24px; right: 24px;">
+        <div class="imgui-window" style="top: 64px; right: 24px;">
           <div class="imgui-titlebar">
             <span>Nameplate Offset</span>
             <span class="close"></span>
@@ -152,8 +151,8 @@
             <div class="slider-row">
               <label>Height (yalms)</label>
               <div class="slider-track">
-                <div class="slider-fill" id="vis-fill" style="width: 37%"></div>
-                <div class="slider-thumb" id="vis-thumb" style="left: 37%"></div>
+                <div class="slider-fill" id="vis-fill" style="width: 41.1%"></div>
+                <div class="slider-thumb" id="vis-thumb" style="left: 41.1%"></div>
               </div>
               <span class="slider-value" id="vis-value">+0.35</span>
             </div>
@@ -179,7 +178,7 @@
         <div class="cmd-help">
           <strong>/npoffset</strong> — Open the nameplate height window, or: /npoffset &lt;yalms&gt;  e.g. /npoffset 0.35
         </div>
-        <div class="imgui-window" style="top: 24px; right: 24px; opacity: 0;" id="cmd-window">
+        <div class="imgui-window" style="top: 64px; right: 24px; opacity: 0;" id="cmd-window">
           <div class="imgui-titlebar">
             <span>Nameplate Offset</span>
             <span class="close"></span>
@@ -189,8 +188,8 @@
             <div class="slider-row">
               <label>Height (yalms)</label>
               <div class="slider-track">
-                <div class="slider-fill" style="width: 37%"></div>
-                <div class="slider-thumb" style="left: 37%"></div>
+                <div class="slider-fill" style="width: 41.1%"></div>
+                <div class="slider-thumb" style="left: 41.1%"></div>
               </div>
               <span class="slider-value">+0.35</span>
             </div>
@@ -202,7 +201,7 @@
             <p class="footer-hint">/npoffset &lt;yalms&gt;  |  /npoffset 0 to reset</p>
           </div>
         </div>
-        <div class="chat-panel" id="chat-panel">
+        <div class="chat-panel" id="chat-panel" style="bottom: 84px;">
           <div class="chat-line cmd hidden" id="chat-0">/npoffset</div>
           <div class="chat-line cmd hidden" id="chat-1">/npoffset 0.35</div>
           <div class="chat-line cmd hidden" id="chat-2">/npoffset 0</div>
@@ -238,14 +237,6 @@
       reset: [156, 246],
       visual: [234, 324],
       cmds: [312, TOTAL_FRAMES],
-    };
-
-    const BEAT_LABELS = {
-      default: "Default configuration window",
-      scopes: "Height slider and Apply to",
-      reset: "Reset offset",
-      visual: "Vertical offset effect",
-      cmds: "/npoffset commands",
     };
 
     const SCENE_IDS = ["scene-default", "scene-scopes", "scene-reset", "scene-visual", "scene-cmds"];
@@ -305,15 +296,6 @@
       }
     }
 
-    function setBeatLabel(text) {
-      const el = document.getElementById("beat-label");
-      el.textContent = text;
-    }
-
-    function setBeatVisible(visible) {
-      document.getElementById("beat-label").style.opacity = visible ? "1" : "0";
-    }
-
     function setCaption(title, sub) {
       document.getElementById("caption-title").textContent = title;
       document.getElementById("caption-sub").textContent = sub;
@@ -340,7 +322,7 @@
       for (const id of SCENE_IDS) {
         const el = document.getElementById(id);
         prev[id] = { opacity: el.style.opacity, display: el.style.display, transform: el.style.transform };
-        el.style.display = id.includes("config") ? "flex" : "block";
+        el.style.display = el.classList.contains("config-only") ? "flex" : "block";
         el.style.opacity = "1";
         el.style.transform = "none";
       }
@@ -446,7 +428,7 @@
       const el = document.getElementById(sceneId);
       el.style.opacity = String(opacity);
       el.style.transform = `translateY(${slide}px)`;
-      el.style.display = opacity > 0.01 ? (sceneId.includes("config") ? "flex" : "block") : "none";
+      el.style.display = opacity > 0.01 ? (el.classList.contains("config-only") ? "flex" : "block") : "none";
       return { opacity, active: opacity > 0.5 };
     }
 
@@ -462,12 +444,6 @@
       for (const [key, id] of keys) {
         const st = sceneLayerOpacity(frame, key, id);
         if (st.active) primaryKey = key;
-      }
-      if (primaryKey) {
-        setBeatLabel(BEAT_LABELS[primaryKey]);
-        setBeatVisible(true);
-      } else {
-        setBeatVisible(false);
       }
       return primaryKey;
     }
