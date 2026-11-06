@@ -319,3 +319,8 @@ body.mock-frame .mock-content.scene-fill {
 body.mock-frame .imgui-window {
   position: relative;
 }
+
+/* Windows placed inside a world scene keep their inline top/right. */
+body.mock-frame .scene .imgui-window {
+  position: absolute;
+}
