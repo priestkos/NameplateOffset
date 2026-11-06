@@ -18,12 +18,42 @@ Check(OffsetRules.Sanitize(float.NaN) == 0f && OffsetRules.Sanitize(float.Negati
 Check(OffsetRules.Sanitize(10f) == OffsetRules.Max && OffsetRules.Sanitize(-9f) == OffsetRules.Min, "Sanitize clamps");
 Check(OffsetRules.Sanitize(0.5f) == 0.5f, "Sanitize keeps in-range value");
 
-Check(OffsetRules.TryPickBaseline(true, 1f, 1.35f, 1.35f, out var k) && k == 1f, "keeps baseline when game value is ours");
-Check(OffsetRules.TryPickBaseline(true, 1f, 1.35f, 2f, out var g) && g == 2f, "adopts game's new finite value");
-Check(OffsetRules.TryPickBaseline(true, 1f, 1.35f, float.NaN, out var n) && n == 1f, "tracked + NaN keeps old baseline");
-Check(!OffsetRules.TryPickBaseline(false, 0f, 0f, float.NaN, out _), "untracked + NaN is skipped");
-Check(!OffsetRules.TryPickBaseline(false, 0f, 0f, float.PositiveInfinity, out _), "untracked + Inf is skipped");
-Check(OffsetRules.TryPickBaseline(false, 0f, 0f, 0.5f, out var u) && u == 0.5f, "untracked finite adopted");
+// A value seen for the first time is adopted at once; NaN before adoption means "leave alone".
+var fresh = new OffsetRules.PlateState();
+Check(fresh.TryAdopt(0.5f) && fresh.BaselineY == 0.5f, "fresh state adopts first finite value");
+Check(!new OffsetRules.PlateState().TryAdopt(float.NaN), "fresh state skips NaN");
+Check(new OffsetRules.PlateState().TryAdopt(float.PositiveInfinity) == false, "fresh state skips Infinity");
+
+// A plate we already own keeps its baseline while the client's value wobbles (the reported jitter).
+var noise = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+var moved = false;
+for (var frame = 0; frame < 60; frame++)
+{
+    var live = frame % 2 == 0 ? 1.35f + 0.02f : 1.35f - 0.02f;
+    noise.TryAdopt(live);
+    moved |= noise.BaselineY != 1f;
+}
+Check(!moved, "alternating per-frame noise never moves the baseline");
+
+// A real change (mount, transform) is adopted once it has held for StableFrames frames, not before.
+var mount = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+for (var frame = 1; frame < OffsetRules.StableFrames; frame++)
+{
+    mount.TryAdopt(2.5f);
+    Check(mount.BaselineY == 1f, $"held back on frame {frame} of the change");
+}
+
+mount.TryAdopt(2.5f);
+Check(mount.BaselineY == 2.5f, "adopted after the change held for StableFrames frames");
+
+// Our own written value (float rounding aside) is never mistaken for a game change.
+var own = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+own.TryAdopt(1.35f);
+Check(own.BaselineY == 1f, "reading back our own value keeps the baseline");
+
+// Garbage after adoption keeps the baseline instead of poisoning the plate.
+var garbage = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+Check(garbage.TryAdopt(float.NaN) && garbage.BaselineY == 1f, "tracked state keeps baseline on NaN");
 
 Console.WriteLine(fail == 0 ? "ALL PASS" : $"{fail} FAILED");
 return fail;

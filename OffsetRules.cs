@@ -21,18 +21,64 @@ internal static class OffsetRules
     }
 
     /// <summary>
-    ///     Picks the baseline: keep the tracked one if the game value is what we wrote (or is garbage),
-    ///     otherwise adopt the game's value. Never adopts a non-finite value; returns false to skip the object.
+    ///     How many frames a changed game value must hold before it is adopted as the new baseline. The client
+    ///     rewrites NameplateOffsetTarget every frame, so a value that only lasts a frame or two is noise; following
+    ///     it turns into the plate wobbling up and down at frame rate.
     /// </summary>
-    public static bool TryPickBaseline(bool isTracked, float trackedBaseline, float written, float current, out float baseline)
+    public const int StableFrames = 4;
+
+    public const float Epsilon = 0.0001f;
+
+    /// <summary>
+    ///     Per-object baseline state. Tracks the value the game itself wanted, what we last wrote, and a candidate
+    ///     game value that has not yet held still long enough to be trusted.
+    /// </summary>
+    internal sealed class PlateState
     {
-        if (isTracked && (MathF.Abs(current - written) < 0.0001f || !float.IsFinite(current)))
+        public float BaselineY;
+        public float WrittenY;
+        public bool Adopted;
+
+        private float candidate;
+        private int candidateFrames;
+
+        /// <summary>
+        ///     Refreshes the baseline from the live game value and returns false when the object must be left alone
+        ///     (an untracked object carrying a non-finite value). A finite value seen for the first time is adopted
+        ///     immediately; after that, a changed value is adopted only once it has held for <see cref="StableFrames"/>.
+        /// </summary>
+        public bool TryAdopt(float current)
         {
-            baseline = trackedBaseline;
+            if (!float.IsFinite(current))
+            {
+                // Never adopt garbage; a tracked plate keeps the baseline it already has.
+                return this.Adopted;
+            }
+
+            if (this.Adopted && MathF.Abs(current - this.WrittenY) < Epsilon)
+            {
+                this.candidateFrames = 0;
+                return true;
+            }
+
+            if (this.candidateFrames > 0 && MathF.Abs(current - this.candidate) < Epsilon)
+            {
+                this.candidateFrames++;
+            }
+            else
+            {
+                this.candidate = current;
+                this.candidateFrames = 1;
+            }
+
+            if (this.Adopted && this.candidateFrames < StableFrames)
+            {
+                return true;
+            }
+
+            this.candidateFrames = 0;
+            this.BaselineY = current;
             return true;
         }
-
-        baseline = current;
-        return float.IsFinite(current);
     }
 }

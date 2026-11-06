@@ -33,7 +33,7 @@ public sealed unsafe class Plugin : IDalamudPlugin
     private readonly ICommandManager commandManager;
 
     /// <summary>Per-object baseline (the value the game itself wanted) plus what we last wrote.</summary>
-    private readonly Dictionary<nint, Tracked> tracked = [];
+    private readonly Dictionary<nint, OffsetRules.PlateState> tracked = [];
 
     private Configuration config;
     private bool windowOpen;
@@ -143,13 +143,21 @@ public sealed unsafe class Plugin : IDalamudPlugin
             var address = obj.Address;
             var native = (GameObject*)address;
 
-            // The game rewrites NameplateOffsetTarget on spawn, mount and transform changes.
-            // If the value is not what we last wrote, that is the game talking: adopt it as the new baseline.
-            var current = native->NameplateOffsetTarget.Y;
-            var isTracked = this.tracked.TryGetValue(address, out var entry);
+            if (!this.tracked.TryGetValue(address, out var entry))
+            {
+                if (delta == 0f)
+                {
+                    continue;
+                }
 
-            // A non-finite value is never a baseline: keep the one we have, or leave the object alone.
-            if (!OffsetRules.TryPickBaseline(isTracked, entry.Baseline, entry.Written, current, out var baseline))
+                entry = new OffsetRules.PlateState();
+                this.tracked[address] = entry;
+            }
+
+            // The game rewrites NameplateOffsetTarget on spawn, mount and transform changes, and interpolates it
+            // every frame. Only a value that holds still for a few frames is a real change; following every frame
+            // of the client's own rewrites is what makes the plate wobble up and down while standing still.
+            if (!entry.TryAdopt(native->NameplateOffsetTarget.Y))
             {
                 continue;
             }
@@ -160,13 +168,14 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 continue;
             }
 
-            var target = baseline + delta;
+            var target = entry.BaselineY + delta;
             native->NameplateOffsetTarget.Y = target;
 
             // Skip the client's interpolation so the change is visible this frame, not over the next few.
             native->NameplateOffset.Y = target;
 
-            this.tracked[address] = new Tracked(baseline, target);
+            entry.WrittenY = target;
+            entry.Adopted = true;
         }
 
         // Drop bookkeeping for objects that left the scene.
@@ -232,8 +241,8 @@ public sealed unsafe class Plugin : IDalamudPlugin
             }
 
             var native = (GameObject*)address;
-            native->NameplateOffsetTarget.Y = entry.Baseline;
-            native->NameplateOffset.Y = entry.Baseline;
+            native->NameplateOffsetTarget.Y = entry.BaselineY;
+            native->NameplateOffset.Y = entry.BaselineY;
         }
 
         this.tracked.Clear();
@@ -300,8 +309,6 @@ public sealed unsafe class Plugin : IDalamudPlugin
 
         ImGui.End();
     }
-
-    private readonly record struct Tracked(float Baseline, float Written);
 }
 
 public sealed class Configuration : IPluginConfiguration

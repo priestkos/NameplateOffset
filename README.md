@@ -66,9 +66,11 @@ character position + NameplateOffset (rotated by actor rotation) + (0, Nameplate
 offsets; `MidoriKami/VanillaPlus` uses the same field for its `DutyPortalNameplateOffset`.
 
 Per-object baselines: the game rewrites `NameplateOffsetTarget` on spawn, mount and transform — if it
-no longer holds what we wrote, that is the game talking, so it is adopted as the new baseline instead
-of fought. Restore goes through `IObjectTable.CreateObjectReference`, so a freed object pointer is
-never dereferenced.
+no longer holds what we wrote, that is the game talking. A changed value is adopted only once it has
+held still for a few frames (`OffsetRules.StableFrames`), because the client rewrites and interpolates
+these fields every frame and following each frame of that is what made the plate wobble up and down
+while standing still. Restore only touches addresses found by enumerating `IObjectTable` that frame, so
+a freed object pointer is never dereferenced.
 
 ## Commands
 
