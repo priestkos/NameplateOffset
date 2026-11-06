@@ -17,8 +17,8 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 namespace NameplateOffset;
 
 /// <summary>
-///     Raised the in-world nameplate of a game object by writing GameObject.NameplateOffsetTarget.Y,
-///     the same field the client uses for mount/transform plate offsets.
+///     Raises the in-world nameplate of a game object by adding Offset / Scale to
+///     GameObject.NameplateOffsetScaleMultiplier, the plate-height term the client never interpolates.
 ///     The plate is anchored at its bottom-centre, so a positive Y raises the whole plate.
 /// </summary>
 public sealed unsafe class Plugin : IDalamudPlugin
@@ -143,6 +143,12 @@ public sealed unsafe class Plugin : IDalamudPlugin
             var address = obj.Address;
             var native = (GameObject*)address;
 
+            // The lift is divided by Scale below; a zero/garbage scale would turn it into NaN or a launch.
+            if (!(native->Scale > 0.01f) || !float.IsFinite(native->Scale))
+            {
+                continue;
+            }
+
             if (!this.tracked.TryGetValue(address, out var entry))
             {
                 if (delta == 0f)
@@ -154,10 +160,11 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 this.tracked[address] = entry;
             }
 
-            // The game rewrites NameplateOffsetTarget on spawn, mount and transform changes, and interpolates it
-            // every frame. Only a value that holds still for a few frames is a real change; following every frame
-            // of the client's own rewrites is what makes the plate wobble up and down while standing still.
-            if (!entry.TryAdopt(native->NameplateOffsetTarget.Y))
+            // Plate Y = Position.Y + NameplateOffset.Y + NameplateOffsetScaleMultiplier * Scale
+            // (GetNamePlateWorldPosition). The client re-sets NameplateOffset/Target inside its own tick, after
+            // IFramework.Update, so a lift written there loses on those frames (the jitter after stopping a run).
+            // The multiplier is set at model setup (SetupRaw) and never interpolated, so the lift lives there.
+            if (!entry.TryAdopt(native->NameplateOffsetScaleMultiplier))
             {
                 continue;
             }
@@ -168,11 +175,8 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 continue;
             }
 
-            var target = entry.BaselineY + delta;
-            native->NameplateOffsetTarget.Y = target;
-
-            // Skip the client's interpolation so the change is visible this frame, not over the next few.
-            native->NameplateOffset.Y = target;
+            var target = entry.BaselineY + (delta / native->Scale);
+            native->NameplateOffsetScaleMultiplier = target;
 
             entry.WrittenY = target;
             entry.Adopted = true;
@@ -240,9 +244,7 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 continue;
             }
 
-            var native = (GameObject*)address;
-            native->NameplateOffsetTarget.Y = entry.BaselineY;
-            native->NameplateOffset.Y = entry.BaselineY;
+            ((GameObject*)address)->NameplateOffsetScaleMultiplier = entry.BaselineY;
         }
 
         this.tracked.Clear();

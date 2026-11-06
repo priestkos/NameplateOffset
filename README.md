@@ -61,16 +61,17 @@ object's `GetNamePlateWorldPosition()` — bottom-centre of the plate — comput
 character position + NameplateOffset (rotated by actor rotation) + (0, NameplateOffsetScaleMultiplier * Scale, 0)
 ```
 
-`NameplateOffset` lerps each frame toward `NameplateOffsetTarget`. Writing `NameplateOffsetTarget.Y`
-(and `NameplateOffset.Y` to skip the lerp) is what the client itself does for mount/transform
-offsets; `MidoriKami/VanillaPlus` uses the same field for its `DutyPortalNameplateOffset`.
+The plugin adds `Offset / Scale` to `NameplateOffsetScaleMultiplier`, so the plate rises by exactly
+`Offset` yalms. That term is set at model setup and never interpolated. `NameplateOffset` itself lerps
+toward `NameplateOffsetTarget`, and the client re-sets those during its own tick, which runs after
+Dalamud's framework update. A lift written there lost on those frames, so the plate jittered when the
+character stopped after moving. The multiplier term avoids that.
 
-Per-object baselines: the game rewrites `NameplateOffsetTarget` on spawn, mount and transform — if it
-no longer holds what we wrote, that is the game talking. A changed value is adopted only once it has
-held still for a few frames (`OffsetRules.StableFrames`), because the client rewrites and interpolates
-these fields every frame and following each frame of that is what made the plate wobble up and down
-while standing still. Restore only touches addresses found by enumerating `IObjectTable` that frame, so
-a freed object pointer is never dereferenced.
+Per-object baselines: the game rewrites the multiplier on spawn, mount and transform. If it no longer
+holds what we wrote, that is the game talking. A changed value is adopted only once it has held still
+for a few frames (`OffsetRules.StableFrames`), so a one-frame blip never moves the plate. Restore only
+touches addresses found by enumerating `IObjectTable` that frame, so a freed object pointer is never
+dereferenced.
 
 ## Commands
 

@@ -21,9 +21,8 @@ internal static class OffsetRules
     }
 
     /// <summary>
-    ///     How many frames a changed game value must hold before it is adopted as the new baseline. The client
-    ///     rewrites NameplateOffsetTarget every frame, so a value that only lasts a frame or two is noise; following
-    ///     it turns into the plate wobbling up and down at frame rate.
+    ///     How many frames a changed game value must hold before it is adopted as the new baseline. A value that
+    ///     only lasts a frame or two is noise; following it turns into the plate wobbling up and down at frame rate.
     /// </summary>
     public const int StableFrames = 4;
 
