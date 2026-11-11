@@ -35,6 +35,9 @@ public sealed unsafe class Plugin : IDalamudPlugin
     /// <summary>Per-object baseline (the value the game itself wanted) plus what we last wrote.</summary>
     private readonly Dictionary<nint, OffsetRules.PlateState> tracked = [];
 
+    /// <summary>Addresses the object table listed this frame; reused to avoid a per-frame allocation.</summary>
+    private readonly HashSet<nint> live = [];
+
     private Configuration config;
     private bool windowOpen;
 
@@ -117,14 +120,15 @@ public sealed unsafe class Plugin : IDalamudPlugin
     private void UpdatePlates()
     {
         var delta = this.config.Offset;
-        var localAddress = this.objectTable.LocalPlayer?.Address ?? 0;
 
-        if (delta == 0f && this.tracked.Count == 0)
+        // Every config change runs RestoreAll, so nothing is tracked while the offset is zero.
+        if (delta == 0f)
         {
             return;
         }
 
-        var seen = 0;
+        var localAddress = this.objectTable.LocalPlayer?.Address ?? 0;
+        this.live.Clear();
 
         foreach (var obj in this.objectTable)
         {
@@ -133,12 +137,12 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 continue;
             }
 
+            this.live.Add(obj.Address);
+
             if (!this.Applies(obj, obj.Address == localAddress))
             {
                 continue;
             }
-
-            seen++;
 
             var address = obj.Address;
             var native = (GameObject*)address;
@@ -151,11 +155,6 @@ public sealed unsafe class Plugin : IDalamudPlugin
 
             if (!this.tracked.TryGetValue(address, out var entry))
             {
-                if (delta == 0f)
-                {
-                    continue;
-                }
-
                 entry = new OffsetRules.PlateState();
                 this.tracked[address] = entry;
             }
@@ -169,12 +168,6 @@ public sealed unsafe class Plugin : IDalamudPlugin
                 continue;
             }
 
-            if (delta == 0f)
-            {
-                this.tracked.Remove(address);
-                continue;
-            }
-
             var target = entry.BaselineY + (delta / native->Scale);
             native->NameplateOffsetScaleMultiplier = target;
 
@@ -182,29 +175,10 @@ public sealed unsafe class Plugin : IDalamudPlugin
             entry.Adopted = true;
         }
 
-        // Drop bookkeeping for objects that left the scene.
-        if (this.tracked.Count > seen)
+        // Drop bookkeeping for objects that left the scene (Remove during enumeration is allowed since .NET Core 3).
+        foreach (var address in this.tracked.Keys)
         {
-            var stale = new List<nint>();
-            foreach (var address in this.tracked.Keys)
-            {
-                var stillHere = false;
-                foreach (var obj in this.objectTable)
-                {
-                    if (obj?.Address == address)
-                    {
-                        stillHere = true;
-                        break;
-                    }
-                }
-
-                if (!stillHere)
-                {
-                    stale.Add(address);
-                }
-            }
-
-            foreach (var address in stale)
+            if (!this.live.Contains(address))
             {
                 this.tracked.Remove(address);
             }
@@ -228,19 +202,19 @@ public sealed unsafe class Plugin : IDalamudPlugin
     private void RestoreAll()
     {
         // Never dereference an address the object table no longer lists: it may have been freed.
-        var live = new HashSet<nint>();
+        this.live.Clear();
         foreach (var obj in this.objectTable)
         {
             if (obj is not null)
             {
-                live.Add(obj.Address);
+                this.live.Add(obj.Address);
             }
         }
 
         foreach (var (address, entry) in this.tracked)
         {
             // An entry that never adopted a baseline (game value was NaN) was never written; leave it alone.
-            if (!entry.Adopted || !live.Contains(address))
+            if (!entry.Adopted || !this.live.Contains(address))
             {
                 continue;
             }
