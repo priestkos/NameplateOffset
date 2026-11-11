@@ -239,7 +239,8 @@ public sealed unsafe class Plugin : IDalamudPlugin
 
         foreach (var (address, entry) in this.tracked)
         {
-            if (!live.Contains(address))
+            // An entry that never adopted a baseline (game value was NaN) was never written; leave it alone.
+            if (!entry.Adopted || !live.Contains(address))
             {
                 continue;
             }
