@@ -55,5 +55,29 @@ Check(own.BaselineY == 1f, "reading back our own value keeps the baseline");
 var garbage = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
 Check(garbage.TryAdopt(float.NaN) && garbage.BaselineY == 1f, "tracked state keeps baseline on NaN");
 
+// A change interrupted by a different value restarts the latch: StableFrames-1 of A, then B, then A again.
+var interrupted = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+for (var frame = 1; frame < OffsetRules.StableFrames; frame++)
+    interrupted.TryAdopt(2.5f);
+interrupted.TryAdopt(3f);
+interrupted.TryAdopt(2.5f);
+Check(interrupted.BaselineY == 1f, "an interrupted change does not carry its old frame count");
+for (var frame = 1; frame < OffsetRules.StableFrames; frame++)
+    interrupted.TryAdopt(2.5f);
+Check(interrupted.BaselineY == 2.5f, "the restarted change is adopted after StableFrames uninterrupted frames");
+
+// Reading back our own value mid-latch cancels the pending candidate.
+var cancel = new OffsetRules.PlateState { BaselineY = 1f, WrittenY = 1.35f, Adopted = true };
+for (var frame = 1; frame < OffsetRules.StableFrames; frame++)
+    cancel.TryAdopt(2.5f);
+cancel.TryAdopt(1.35f);
+cancel.TryAdopt(2.5f);
+Check(cancel.BaselineY == 1f, "our own value read mid-latch resets the pending change");
+
+// An object first seen with NaN is adopted as soon as a finite value shows up (no latch before adoption).
+var late = new OffsetRules.PlateState();
+late.TryAdopt(float.NaN);
+Check(late.TryAdopt(0.8f) && late.BaselineY == 0.8f, "first finite value after NaN is adopted at once");
+
 Console.WriteLine(fail == 0 ? "ALL PASS" : $"{fail} FAILED");
 return fail;
