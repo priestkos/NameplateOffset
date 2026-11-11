@@ -271,9 +271,9 @@ public sealed unsafe class Plugin : IDalamudPlugin
         var changed = false;
 
         var offset = this.config.Offset;
-        if (ImGui.SliderFloat("Height (yalms)", ref offset, -1.5f, 3.0f, "%+.2f"))
+        if (ImGui.SliderFloat("Height (yalms)", ref offset, OffsetRules.Min, OffsetRules.Max, "%+.2f"))
         {
-            this.config.Offset = Math.Clamp(offset, -1.5f, 3.0f);
+            this.config.Offset = OffsetRules.Sanitize(offset);
             changed = true;
         }
 
